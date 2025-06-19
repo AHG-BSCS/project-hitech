@@ -88,8 +88,10 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => {
-    window.location.href = '/'; // or /login
+    localStorage.removeItem('isAuthenticated');
+    window.location.href = '/';
   };
+  
 
   return (
     <div className="flex min-h-screen">

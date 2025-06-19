@@ -19,9 +19,10 @@ export default function Login() {
 
     const { employeeId, password } = form;
 
-    if (employeeId === 'admin' && password === 'admin') {
+    if (form.employeeId === 'admin' && form.password === 'admin') {
+      localStorage.setItem('isAuthenticated', 'true');
       setLoading(false);
-      navigate('/dashboard');
+      window.location.href = '/dashboard';
     } else {
       setLoading(false);
       setErrorMsg('Invalid ID or password.');
