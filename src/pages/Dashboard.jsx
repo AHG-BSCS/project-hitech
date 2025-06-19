@@ -1,10 +1,59 @@
 import React, { useState } from 'react';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [section, setSection] = useState('dashboard');
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (!user) {
+        navigate('/login');
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const renderContent = () => {
     switch (section) {
+      case 'settings':
+        return (
+          <section className="bg-white p-6 rounded-lg shadow-md border border-gray-300 h-[525px]">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-black">Settings</h2>
+            </div>
+          </section>
+        );
+      case 'users':
+        return (
+          <section className="bg-white p-6 rounded-lg shadow-md border border-gray-300 h-[525px]">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-black">Manage Users</h2>
+              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => navigate('/register')}>
+                Add User
+              </button>
+            </div>
+          </section>
+        );
+      case 'classes':
+        return (
+          <section className="bg-white p-6 rounded-lg shadow-md border border-gray-300 h-[525px]">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-black">Manage Classes</h2>
+            </div>
+          </section>
+        );
+      case 'grade':
+        return (
+          <section className="bg-white p-6 rounded-lg shadow-md border border-gray-300 h-[525px]">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-black">Manage Grades</h2>
+            </div>
+          </section>
+        );
       case 'student_info':
         return (
           <section className="bg-white p-6 rounded-lg shadow-md border border-gray-300 h-[525px]">
@@ -87,85 +136,88 @@ export default function Dashboard() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut(auth);
     localStorage.removeItem('isAuthenticated');
     window.location.href = '/';
   };
-  
 
   return (
-    <div className="bg-blue-900 flex min-h-screen">
-      <aside className="fixed top-5 left-5 bottom-5 text-white center flex flex-col">
+    <div>
+      <div className="bg-blue-900 flex min-h-screen">
+        <aside className="fixed top-5 left-5 bottom-5 text-white center flex flex-col">
+          <div>
+            <div className="mb-8 bg-white text-black text-center rounded-lg py-5">
+              <p className="text-sm">Welcome, <span className="font-bold">Admin</span></p>
+              <p className="text-xs">Administrator</p>
+            </div>
+
+            <div className="mb-8 bg-white text-black text-center rounded-lg py-4 px-4 h-[calc(100%-0.5rem)]">
+              <div className="mb-6">
+                <input
+                  type="text"
+                  placeholder="Search"
+                  className="w-full p-2 rounded-lg border border-blue-900 text-black bg-transparent"
+                />
+              </div>
+              <div className='items-center mb-4'>
+                <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('dashboard')}>
+                  <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
+                  Dashboard
+                </button>
+                <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('student_info')}>
+                  <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
+                  Student Information
+                </button>
+                <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('grade')}>
+                  <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
+                  Grade
+                </button>
+                <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('classes')}>
+                  <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
+                  Classes
+                </button>
+                <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('users')}>
+                  <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
+                  Users
+                </button>
+                <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('settings')}>
+                  <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
+                  Settings
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-auto">
+            <button className="btn text-white btn-error w-full" onClick={handleLogout}>
+              LOGOUT
+            </button>
+          </div>
+        </aside>
+
+        <div className='ml-64 w-full flex flex-col justify-between bg-white rounded-lg p-5 m-5'>
         <div>
-          <div className="mb-8 bg-white text-black text-center rounded-lg py-5">
-            <p className="text-sm">Welcome, <span className="font-bold">Admin</span></p>
-            <p className="text-xs">Administrator</p>
-          </div>
-
-          <div className="mb-8 bg-white text-black text-center rounded-lg py-4 px-4 h-[calc(100%-0.5rem)]">
-            <div className="mb-6">
-              <input
-                type="text"
-                placeholder="Search"
-                className="w-full p-2 rounded-lg border border-blue-900 text-black bg-transparent"
-              />
-            </div>
-            <div className='items-center mb-4'>
-              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('dashboard')}>
-                <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
-                Dashboard
-              </button>
-              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('student_info')}>
-                <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
-                Student Information
-              </button>
-              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('grade')}>
-                <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
-                Grade
-              </button>
-              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('classes')}>
-                <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
-                Classes
-              </button>
-              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('users')}>
-                <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
-                Users
-              </button>
-              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('settings')}>
-                <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
-                Settings
-              </button>
-            </div>
+          <div className="flex justify-between items-center bg-white">
+            <h1 className="text-2xl font-bold text-black">Welcome to System</h1>
+            <ul>
+              <li className="mb-2 text-black">ADMIN</li>
+              <select className="select select-sm w-full max-w-xs bg-white shadow-md border border-gray-300 text-black">
+                <option disabled selected>—</option>
+                <option>Account Info</option>
+                <option>Records</option>
+                <option>Something Something</option>
+                <option>Logout</option>
+              </select>
+            </ul>
           </div>
         </div>
-
-        <div className="mt-auto">
-          <button className="btn text-white btn-error w-full" onClick={handleLogout}>
-            LOGOUT
-          </button>
-        </div>
-      </aside>
-
-      <div className='ml-64 w-full flex flex-col justify-between bg-white rounded-lg p-5 m-5'>
-      <div>
-        <div className="flex justify-between items-center bg-white">
-          <h1 className="text-2xl font-bold text-black">Welcome to System</h1>
-          <ul>
-            <li className="mb-2 text-black">LSPU ADMIN</li>
-            <select className="select select-sm w-full max-w-xs bg-white text-black">
-              <option disabled selected>—</option>
-              <option>Account Info</option>
-              <option>Records</option>
-              <option>Something Something</option>
-              <option>Logout</option>
-            </select>
-          </ul>
+        <div className="flex-1 p-8">
+          {renderContent()}
         </div>
       </div>
-      <div className="flex-1 p-8">
-        {renderContent()}
       </div>
-    </div>
+    );
     </div>
   );
 }

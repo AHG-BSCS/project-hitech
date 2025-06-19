@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { auth, db } from '../firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export default function Login() {
   const [form, setForm] = useState({ employeeId: '', password: '' });
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -17,23 +20,34 @@ export default function Login() {
     setLoading(true);
     setErrorMsg('');
 
-    const { employeeId, password } = form;
+    try {
+      const q = query(collection(db, 'users'), where('employeeId', '==', form.employeeId));
+      const querySnapshot = await getDocs(q);
 
-    if (form.employeeId === 'admin' && form.password === 'admin') {
+      if (querySnapshot.empty) {
+        setErrorMsg('Employee ID not found.');
+        setLoading(false);
+        return;
+      }
+
+      const userDoc = querySnapshot.docs[0].data();
+      const email = userDoc.email;
+
+      await signInWithEmailAndPassword(auth, email, form.password);
+
       localStorage.setItem('isAuthenticated', 'true');
+      navigate('/dashboard');
+    } catch (error) {
+      console.error(error);
+      setErrorMsg('Invalid credentials.');
+    } finally {
       setLoading(false);
-      window.location.href = '/dashboard';
-    } else {
-      setLoading(false);
-      setErrorMsg('Invalid ID or password.');
     }
   };
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    }
+    if (isAuthenticated) navigate('/dashboard');
   }, []);
 
   return (
@@ -80,23 +94,16 @@ export default function Login() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-2 top-2"
               >
-                {/* Eye Icon Here */}
                 👁️
               </button>
             </div>
           </div>
 
-          {errorMsg && (
-            <div className="text-red-500 text-center mb-2">{errorMsg}</div>
-          )}
+          {errorMsg && <div className="text-red-500 text-center">{errorMsg}</div>}
 
           <div className="form-control mt-4">
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? (
-                <span className="loading loading-spinner"></span>
-              ) : (
-                'Login'
-              )}
+              {loading ? <span className="loading loading-spinner"></span> : 'Login'}
             </button>
           </div>
         </form>
