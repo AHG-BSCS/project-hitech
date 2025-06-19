@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
@@ -28,6 +28,13 @@ export default function Login() {
       setErrorMsg('Invalid ID or password.');
     }
   };
+
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, []);
 
   return (
     <div className="bg-base-200 min-h-screen flex items-center justify-center">
