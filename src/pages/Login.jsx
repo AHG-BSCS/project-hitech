@@ -35,6 +35,7 @@ export default function Login() {
 
       await signInWithEmailAndPassword(auth, email, form.password);
 
+      localStorage.setItem('employeeId', form.employeeId);
       localStorage.setItem('isAuthenticated', 'true');
       navigate('/dashboard');
     } catch (error) {

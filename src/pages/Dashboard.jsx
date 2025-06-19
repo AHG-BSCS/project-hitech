@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 export default function Dashboard() {
   const navigate = useNavigate();
   const [section, setSection] = useState('dashboard');
+  const [employeeId, setEmployeeId] = useState('');
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -14,6 +15,11 @@ export default function Dashboard() {
         navigate('/login');
       }
     });
+
+    const storedId = localStorage.getItem('employeeId');
+    if (storedId) {
+      setEmployeeId(storedId);
+    }
     return () => unsubscribe();
   }, []);
 
@@ -138,6 +144,7 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await signOut(auth);
+    localStorage.removeItem('employeeId');
     localStorage.removeItem('isAuthenticated');
     window.location.href = '/';
   };
@@ -148,8 +155,9 @@ export default function Dashboard() {
         <aside className="fixed top-5 left-5 bottom-5 text-white center flex flex-col">
           <div>
             <div className="mb-8 bg-white text-black text-center rounded-lg py-5">
-              <p className="text-sm">Welcome, <span className="font-bold">Admin</span></p>
-              <p className="text-xs">Administrator</p>
+              <p className="text-sm">
+                Welcome, <span className="font-bold">{employeeId || 'User'}</span>
+              </p>
             </div>
 
             <div className="mb-8 bg-white text-black text-center rounded-lg py-4 px-4 h-[calc(100%-0.5rem)]">
@@ -201,7 +209,9 @@ export default function Dashboard() {
           <div className="flex justify-between items-center bg-white">
             <h1 className="text-2xl font-bold text-black">Welcome to System</h1>
             <ul>
-              <li className="mb-2 text-black">ADMIN</li>
+            <li className="text-sm">
+              <span className='text-black'>{employeeId || 'User'}</span>
+            </li>
               <select className="select select-sm w-full max-w-xs bg-white shadow-md border border-gray-300 text-black">
                 <option disabled selected>—</option>
                 <option>Account Info</option>
