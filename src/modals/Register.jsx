@@ -43,7 +43,7 @@ export default function Register({ open, onClose }) {
       });
 
       localStorage.setItem('isAuthenticated', 'true');
-      navigate('/dashboard');
+      onClose && onClose();
     } catch (error) {
       console.error('Registration error:', error.message);
       setErrorMsg(error.message);

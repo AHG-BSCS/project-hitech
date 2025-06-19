@@ -3,11 +3,13 @@ import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Register from '../modals/Register';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [section, setSection] = useState('dashboard');
   const [employeeId, setEmployeeId] = useState('');
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -38,7 +40,7 @@ export default function Dashboard() {
           <section className="bg-white p-6 rounded-lg shadow-md border border-gray-300 h-[525px]">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-black">Manage Users</h2>
-              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => navigate('/register')}>
+              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setShowRegisterModal(true)}>
                 Add User
               </button>
             </div>
@@ -225,9 +227,11 @@ export default function Dashboard() {
         <div className="flex-1 p-8">
           {renderContent()}
         </div>
+        {showRegisterModal && (
+          <Register open={showRegisterModal} onClose={() => setShowRegisterModal(false)} />
+        )}
       </div>
       </div>
-    );
     </div>
   );
 }
