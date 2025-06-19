@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 export default function Dashboard() {
   const [section, setSection] = useState('dashboard');
@@ -7,7 +7,7 @@ export default function Dashboard() {
     switch (section) {
       case 'student_info':
         return (
-          <section className="bg-white p-6 rounded-lg shadow-md h-[525px]">
+          <section className="bg-white p-6 rounded-lg shadow-md border border-gray-300 h-[525px]">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-black">Manage Student Information</h2>
               <button className="btn bg-purple-700 text-white hover:bg-purple-800">Create</button>
@@ -61,13 +61,13 @@ export default function Dashboard() {
       default:
         return (
           <>
-            <section className="mb-10">
-              <div className="bg-white shadow-md p-6 rounded-lg">
+            <section className="mb-10 shadow-lg">
+              <div className="bg-white shadow-md border border-gray-300 p-6 rounded-lg">
                 <h2 className="text-xl text-black font-semibold mb-4">Quick Overview</h2>
                 <div className="h-px bg-gray-300 my-2 w-full"></div>
                 <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {['Students', 'Records', 'Classes', 'Accounts'].map((title) => (
-                    <div className="stat bg-white shadow-md" key={title}>
+                    <div className="stat bg-white border border-gray-300 shadow-md" key={title}>
                       <div className="stat-title text-black">{title}</div>
                       <div className="stat-value text-black">0000</div>
                     </div>
@@ -76,7 +76,7 @@ export default function Dashboard() {
               </div>
             </section>
 
-            <section className="bg-white p-6 rounded-lg shadow-md">
+            <section className="bg-white shadow-md border border-gray-300 p-6 rounded-lg shadow-md">
               <h2 className="text-xl text-black font-semibold mb-4">Student Population</h2>
               <div className="text-center text-gray-500 h-48 flex items-center justify-center">
                 Chart
@@ -94,84 +94,78 @@ export default function Dashboard() {
   
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside className="w-64 bg-purple-700 text-white flex flex-col justify-between p-5">
+    <div className="bg-blue-900 flex min-h-screen">
+      <aside className="fixed top-5 left-5 bottom-5 text-white center flex flex-col">
         <div>
-          <div className="mb-8">
+          <div className="mb-8 bg-white text-black text-center rounded-lg py-5">
             <p className="text-sm">Welcome, <span className="font-bold">Admin</span></p>
             <p className="text-xs">Administrator</p>
           </div>
 
-          <div className="mb-10">
-            <h2 className="font-bold uppercase text-sm mb-2">Dashboard</h2>
-            <hr className="border-t border-gray-300 my-2" />
-            <ul>
-              <li className="mb-2"><button className="hover:underline" onClick={() => setSection('dashboard')}>Dashboard</button></li>
-              <hr className="border-t border-gray-300 my-2" />
-            </ul>
-          </div>
-
-          <div className="mb-6">
-            <h2 className="font-bold uppercase text-sm mb-2">Core</h2>
-            <hr className="border-t border-gray-300 my-2" />
-            <select
-              value={section}
-              onChange={(e) => setSection(e.target.value)}
-              className="select select-sm w-full max-w-xs bg-white text-black"
-            >
-              <option value="dashboard">Dashboard</option>
-              <option value="student_info">Student Information</option>
-              <option value="grade">Grade</option>
-              <option value="classes">Classes</option>
-              <option value="users">Users</option>
-            </select>
-          </div>
-
-          <div>
-            <h2 className="font-bold uppercase text-sm mb-2">Administration</h2>
-            <div className="h-px bg-gray-300 my-2 w-full"></div>
-            <ul>
-              <li><a href="#" className="hover:underline">User Accounts</a></li>
-              <div className="h-px bg-gray-300 my-2 w-full"></div>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="font-bold uppercase text-sm mb-2">Settings</h2>
-            <div className="h-px bg-gray-300 my-2 w-full"></div>
-            <ul>
-              <li><a href="#" className="hover:underline">Portal Settings</a></li>
-              <div className="h-px bg-gray-300 my-2 w-full"></div>
-            </ul>
+          <div className="mb-8 bg-white text-black text-center rounded-lg py-4 px-4 h-[calc(100%-0.5rem)]">
+            <div className="mb-6">
+              <input
+                type="text"
+                placeholder="Search"
+                className="w-full p-2 rounded-lg border border-blue-900 text-black bg-transparent"
+              />
+            </div>
+            <div className='items-center mb-4'>
+              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('dashboard')}>
+                <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
+                Dashboard
+              </button>
+              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('student_info')}>
+                <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
+                Student Information
+              </button>
+              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('grade')}>
+                <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
+                Grade
+              </button>
+              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('classes')}>
+                <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
+                Classes
+              </button>
+              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('users')}>
+                <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
+                Users
+              </button>
+              <button className="w-full flex text-black text-left py-2 rounded-lg" onClick={() => setSection('settings')}>
+                <img src="../public/placeholder.svg" alt="Dashboard Icon" className="w-7 h-7 mr-2" />
+                Settings
+              </button>
+            </div>
           </div>
         </div>
 
-        <button className="btn text-white btn-error w-full mt-10" onClick={handleLogout}>LOGOUT</button>
+        <div className="mt-auto">
+          <button className="btn text-white btn-error w-full" onClick={handleLogout}>
+            LOGOUT
+          </button>
+        </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-10">
-          <h1 className="text-2xl font-bold text-purple-700">Welcome to System</h1>
-          <div>
-            <ul>
-              <li className="mb-2 text-black">LSPU ADMIN</li>
-              <select className="select select-sm w-full max-w-xs bg-white text-black">
-                <option disabled selected>—</option>
-                <option>Account Info</option>
-                <option>Records</option>
-                <option>Something Something</option>
-                <option>Logout</option>
-              </select>
-            </ul>
-          </div>
+      <div className='ml-64 w-full flex flex-col justify-between bg-white rounded-lg p-5 m-5'>
+      <div>
+        <div className="flex justify-between items-center bg-white">
+          <h1 className="text-2xl font-bold text-black">Welcome to System</h1>
+          <ul>
+            <li className="mb-2 text-black">LSPU ADMIN</li>
+            <select className="select select-sm w-full max-w-xs bg-white text-black">
+              <option disabled selected>—</option>
+              <option>Account Info</option>
+              <option>Records</option>
+              <option>Something Something</option>
+              <option>Logout</option>
+            </select>
+          </ul>
         </div>
-
-        {/* Main Section */}
+      </div>
+      <div className="flex-1 p-8">
         {renderContent()}
-      </main>
+      </div>
+    </div>
     </div>
   );
 }
