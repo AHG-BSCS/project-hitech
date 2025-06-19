@@ -129,6 +129,15 @@ export default function Dashboard() {
           </div>
 
           <div>
+            <h2 className="font-bold uppercase text-sm mb-2">Administration</h2>
+            <div className="h-px bg-gray-300 my-2 w-full"></div>
+            <ul>
+              <li><a href="#" className="hover:underline">User Accounts</a></li>
+              <div className="h-px bg-gray-300 my-2 w-full"></div>
+            </ul>
+          </div>
+
+          <div>
             <h2 className="font-bold uppercase text-sm mb-2">Settings</h2>
             <div className="h-px bg-gray-300 my-2 w-full"></div>
             <ul>
