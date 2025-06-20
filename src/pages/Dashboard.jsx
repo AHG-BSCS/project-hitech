@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import Register from '../modals/Register';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -11,17 +13,26 @@ export default function Dashboard() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectValue, setSelectValue] = useState('');
+  const [permissions, setPermissions] = useState(0);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (!user) navigate('/login');
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        navigate('/login');
+      } else {
+        const q = query(collection(db, 'users'), where('uid', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const userData = querySnapshot.docs[0].data();
+          setEmployeeId(userData.employeeId);
+          localStorage.setItem('employeeId', userData.employeeId);
+          setPermissions(userData.permissions || 0);
+        }
+      }
     });
 
-    const storedId = localStorage.getItem('employeeId');
-    if (storedId) setEmployeeId(storedId);
-
     return () => unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -41,23 +52,21 @@ export default function Dashboard() {
   const renderContent = () => {
     switch (section) {
       case 'settings':
-        return (
-          <Section title="Settings" />
-        );
+        return <Section title="Settings" />;
       case 'users':
-        return (
+        return hasPermission(permissions, PERMISSIONS.MANAGE_USERS) ? (
           <Section title="Manage Users">
             <button onClick={() => setShowRegisterModal(true)} className="btn bg-blue-500 text-white">Add User</button>
           </Section>
+        ) : (
+          <Section title="Access Denied">
+            <p className="text-red-500">You do not have permission to manage users.</p>
+          </Section>
         );
       case 'classes':
-        return (
-          <Section title="Manage Classes" />
-        );
+        return <Section title="Manage Classes" />;
       case 'grade':
-        return (
-          <Section title="Manage Grades" />
-        );
+        return <Section title="Manage Grades" />;
       case 'student_info':
         return (
           <Section title="Manage Student Information">
@@ -86,6 +95,15 @@ export default function Dashboard() {
     }
   };
 
+  const menuItems = [
+    ['dashboard', 'Dashboard'],
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS )   ? [['student_info', 'Student Information']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) ? [['grade', 'Grade']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) ? [['classes', 'Classes']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_USERS) ? [['users', 'Users']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS) ? [['settings', 'Settings']] : []),
+  ];  
+
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
@@ -104,14 +122,7 @@ export default function Dashboard() {
               placeholder="Search"
               className="w-full p-2 mb-6 rounded-lg border border-blue-900 text-black bg-transparent"
             />
-            {[
-              ['dashboard', 'Dashboard'],
-              ['student_info', 'Student Information'],
-              ['grade', 'Grade'],
-              ['classes', 'Classes'],
-              ['users', 'Users'],
-              ['settings', 'Settings']
-            ].map(([key, label]) => (
+            {menuItems.map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setSection(key)}
