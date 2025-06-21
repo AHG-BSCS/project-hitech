@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +18,8 @@ export default function Dashboard() {
   const [searchUser, setSearchUser] = useState('');
   const [searchSidebar, setSearchSidebar] = useState('');
   const [actionUserId, setActionUserId] = useState(null);
+  const [dropUp, setDropUp] = useState(false);
+  const buttonRefs = useRef({});
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -91,6 +93,22 @@ export default function Dashboard() {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
+  const toggleDropdown = (id) => {
+    if (actionUserId === id) {
+      setActionUserId(null);
+      return;
+    }
+  
+    const button = buttonRefs.current[id];
+    if (button) {
+      const rect = button.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setDropUp(spaceBelow < 120);
+    }
+  
+    setActionUserId(id);
+  };    
+
   const renderContent = () => {
     switch (section) {
       case 'settings':
@@ -131,21 +149,29 @@ export default function Dashboard() {
                       user.email.toLowerCase().includes(searchUser.toLowerCase())
                     )
                     .map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
+                      <tr
+                        key={user.id}
+                        className={`${
+                          actionUserId === user.id
+                            ? 'bg-blue-200 text-black'
+                            : 'hover:bg-blue-100 hover:text-black'
+                        }`}
+                      >
                         <td>{user.employeeId}</td>
                         <td>{user.email}</td>
                         <td>{user.permissions}</td>
                         <td className="relative">
                           <button
-                            onClick={() =>
-                              setActionUserId(actionUserId === user.id ? null : user.id)
-                            }
-                            className="text-xl px-2 py-1 rounded hover:bg-gray-200"
+                            ref={(el) => (buttonRefs.current[user.id] = el)}
+                            onClick={() => toggleDropdown(user.id)}
+                            className="text-xl px-2 py-1 rounded"
                           >
                             ⋮
                           </button>
                           {actionUserId === user.id && (
-                            <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-md z-10">
+                            <div
+                              className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-40 bg-white border rounded shadow-md z-10`}
+                            >
                               <button
                                 className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                                 onClick={() => handleMakeInactive(user.id)}
