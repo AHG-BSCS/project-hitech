@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Register from '../modals/Register';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
+import ClassesPage from './ClassesPage';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -207,7 +208,7 @@ export default function Dashboard() {
           </Section>
         );
       case 'classes':
-        return <Section title="Manage Classes" />;
+        return <ClassesPage />;
       case 'grade':
         return <Section title="Manage Grades" />;
       case 'student_info':
