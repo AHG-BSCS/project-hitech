@@ -95,7 +95,7 @@ function AddClassModal({ open, onClose, onSaved, initialData }) {
   );
 }
 
-export default function ClassesPage() {
+export default function ManageClasses() {
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState(null);
   const [classes, setClasses] = useState([]);

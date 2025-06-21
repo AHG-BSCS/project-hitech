@@ -1,0 +1,169 @@
+import React, { useEffect, useState, useRef } from 'react';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../firebase';
+import PERMISSIONS, { hasPermission } from '../modules/Permissions';
+import RegisterRole from '../modals/RegisterRole';
+
+export default function ManageRoles({ permissions }) {
+  const [roles, setRoles] = useState([]);
+  const [searchUser, setSearchUser] = useState('');
+  const [actionUserId, setActionUserId] = useState(null);
+  const [dropUp, setDropUp] = useState(false);
+  const buttonRefs = useRef({});
+  const [showRegisterRoleModal, setShowRegisterRoleModal] = useState(false);
+
+  useEffect(() => {
+    fetchRoles();
+  }, []);
+  
+  const fetchRoles = async () => {
+    const snapshot = await getDocs(collection(db, 'roles'));
+    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setRoles(data);
+  };
+
+  const getPermissionNames = (permissionInt) => {
+    if (permissionInt === 0) return 'All';
+    return Object.entries(PERMISSIONS)
+      .filter(([_, bit]) => (permissionInt & bit) !== 0)
+      .map(([name]) => name)
+      .join(', ');
+  };
+
+  const handleDeleteRole = async (roleId) => {
+    const confirm = window.confirm('Are you sure you want to delete this role?');
+    if (!confirm) return;
+  
+    try {
+      await deleteDoc(doc(db, 'roles', roleId));
+      fetchRoles();
+    } catch (error) {
+      console.error('Error deleting role:', error);
+      alert('Failed to delete role.');
+    }
+  };
+
+  const toggleDropdown = (id) => {
+    if (actionUserId === id) {
+      setActionUserId(null);
+      return;
+    }
+
+    const button = buttonRefs.current[id];
+    if (button) {
+      const rect = button.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setDropUp(spaceBelow < 120);
+    }
+
+    setActionUserId(id);
+  };
+
+  if (!hasPermission(permissions, PERMISSIONS.MANAGE_ROLES)) {
+    return (
+      <Section title="Access Denied">
+        <p className="text-red-500">You do not have permission to manage roles.</p>
+      </Section>
+    );
+  }
+
+  return (
+    <div>
+      <Section title="Manage Roles">
+        <div>
+          <button onClick={() => setShowRegisterRoleModal(true)} className="btn bg-blue-500 text-white">
+            Add Role
+          </button>
+        </div>
+      </Section>
+
+      <Section>
+        <div className="w-full flex flex-col space-y-4">
+          <input
+            type="text"
+            placeholder="Search by Role Name"
+            className="input input-bordered w-full bg-white border border-gray-300 text-black"
+            value={searchUser}
+            onChange={(e) => setSearchUser(e.target.value)}
+          />
+
+          <div className="h-[350px] overflow-y-auto border rounded shadow">
+            <table className="table w-full text-sm text-left text-gray-700">
+              <thead className="bg-gray-100 text-black sticky top-0 z-10">
+                <tr>
+                  <th className="w-32">Role Name</th>
+                  <th className="w-32">Permission Integer</th>
+                  <th className="w-64">Permissions</th>
+                  <th className="w-32">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roles
+                  .filter(role => role.name.toLowerCase().includes(searchUser.toLowerCase()))
+                  .map(role => (
+                    <tr
+                      key={role.id}
+                      className={`${
+                        actionUserId === role.id
+                          ? 'bg-blue-200 text-black'
+                          : 'hover:bg-blue-100 hover:text-black'
+                      }`}
+                    >
+                      <td>{role.name}</td>
+                      <td>{role.permission}</td>
+                      <td>{getPermissionNames(role.permission)}</td>
+                      <td className="relative">
+                        <button
+                          ref={el => (buttonRefs.current[role.id] = el)}
+                          onClick={() => toggleDropdown(role.id)}
+                          className="text-xl px-2 py-1 rounded"
+                        >
+                          ⋮
+                        </button>
+                        {actionUserId === role.id && (
+                          <div
+                            className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-40 bg-white border rounded shadow-md z-10`}
+                          >
+                            <button
+                              className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                              onClick={() => alert('Edit role not implemented')}
+                            >
+                              Edit Role
+                            </button>
+                            <button
+                              className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
+                              onClick={() => handleDeleteRole(role.id)}
+                            >
+                              Delete Role
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </Section>
+      {showRegisterRoleModal && (
+        <RegisterRole
+          open={showRegisterRoleModal}
+          onClose={() => setShowRegisterRoleModal(false)}
+          refreshRoles={fetchRoles}
+        />
+      )}
+    </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <section className="bg-white p-6 rounded-lg shadow-md border border-gray-300 mb-8">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-black">{title}</h2>
+        {children}
+      </div>
+    </section>
+  );
+}

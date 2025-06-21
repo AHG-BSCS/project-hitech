@@ -2,18 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import RegisterUser from '../modals/RegisterUser';
-import RegisterRole from '../modals/RegisterRole';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
-import ClassesPage from './ClassesPage';
+import ManageClasses from '../components/ManageClasses';
+import ManageRoles from '../components/ManageRoles';
+import ManageUsers from '../components/ManageUsers';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [section, setSection] = useState('dashboard');
   const [employeeId, setEmployeeId] = useState('');
-  const [showRegisterUserModal, setShowRegisterUserModal] = useState(false);
-  const [showRegisterRoleModal, setShowRegisterRoleModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectValue, setSelectValue] = useState('');
   const [permissions, setPermissions] = useState(0);
@@ -140,190 +138,21 @@ export default function Dashboard() {
   const renderContent = () => {
     switch (section) {
       case 'roles':
-        return hasPermission(permissions, PERMISSIONS.MANAGE_ROLES) ? (
-          <div>
-            <Section title="Manage Roles">
-              <div>
-                <button onClick={() => setShowRegisterRoleModal(true)} className="btn bg-blue-500 text-white">
-                  Add Role
-                </button>
-              </div>
-            </Section>
-
-            <Section>
-              <div className="w-full flex flex-col space-y-4">
-                <input
-                  type="text"
-                  placeholder="Search by Role Name"
-                  className="input input-bordered w-full bg-white border border-gray-300 text-black"
-                  value={searchUser}
-                  onChange={(e) => setSearchUser(e.target.value)}
-                />
-
-                <div className="h-[350px] overflow-y-auto border rounded shadow">
-                  <table className="table w-full text-sm text-left text-gray-700">
-                    <thead className="bg-gray-100 text-black sticky top-0 z-10">
-                      <tr>
-                        <th className="w-32">Role Name</th>
-                        <th className="w-32">Permission Integer</th>
-                        <th className="w-64">Permissions</th>
-                        <th className="w-32">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {roles
-                        .filter((role) =>
-                          role.name.toLowerCase().includes(searchUser.toLowerCase())
-                        )
-                        .map((role) => (
-                          <tr
-                            key={role.id}
-                            className={`${
-                              actionUserId === role.id
-                                ? 'bg-blue-200 text-black'
-                                : 'hover:bg-blue-100 hover:text-black'
-                            }`}
-                          >
-                            <td>{role.name}</td>
-                            <td>{role.permission}</td>
-                            <td>{getPermissionNames(role.permission)}</td>
-                            <td className="relative">
-                              <button
-                                ref={(el) => (buttonRefs.current[role.id] = el)}
-                                onClick={() => toggleDropdown(role.id)}
-                                className="text-xl px-2 py-1 rounded"
-                              >
-                                ⋮
-                              </button>
-                              {actionUserId === role.id && (
-                                <div
-                                  className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-40 bg-white border rounded shadow-md z-10`}
-                                >
-                                  <button
-                                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                                    onClick={() => alert('Edit role not implemented')}
-                                  >
-                                    Edit Role
-                                  </button>
-                                  <button
-                                    className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
-                                    onClick={() => alert('Delete role not implemented')}
-                                  >
-                                    Delete Role
-                                  </button>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </Section>
-          </div>
-        ) : (
-          <Section title="Access Denied">
-            <p className="text-red-500">You do not have permission to manage roles.</p>
-          </Section>
+        return (
+          <ManageRoles
+            permissions={permissions}
+          />
         );
       case 'settings':
         return <Section title="Settings" />;
       case 'users':
-        return hasPermission(permissions, PERMISSIONS.MANAGE_USERS) ? (
-          <div>
-            <Section title="Manage Users">
-              <div>
-                <button onClick={() => setShowRegisterUserModal(true)} className="btn bg-blue-500 text-white">Add User</button>
-              </div>
-            </Section>
-
-            <Section>
-              <div className="w-full flex flex-col space-y-4">
-              <input
-                type="text"
-                placeholder="Search by ID or Email"
-                className="input input-bordered w-full bg-white border border-gray-300 text-black"
-                value={searchUser}
-                onChange={(e) => setSearchUser(e.target.value)}
-              />
-
-              <div className='h-[350px] overflow-y-auto border rounded shadow'>
-              <table className="table w-full text-sm text-left text-gray-700">
-                <thead className="bg-gray-100 text-black sticky top-0 z-10">
-                  <tr>
-                    <th className="w-32">Employee ID</th>
-                    <th className="w-64">Email</th>
-                    <th className="w-32">Role</th>
-                    <th className="w-32">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users
-                    .filter(user =>
-                      user.employeeId.toLowerCase().includes(searchUser.toLowerCase()) ||
-                      user.email.toLowerCase().includes(searchUser.toLowerCase())
-                    )
-                    .map((user) => (
-                      <tr
-                        key={user.id}
-                        className={`${
-                          actionUserId === user.id
-                            ? 'bg-blue-200 text-black'
-                            : 'hover:bg-blue-100 hover:text-black'
-                        }`}
-                      >
-                        <td>{user.employeeId}</td>
-                        <td>{user.email}</td>
-                        <td>{user.role}</td>
-                        <td className="relative">
-                          <button
-                            ref={(el) => (buttonRefs.current[user.id] = el)}
-                            onClick={() => toggleDropdown(user.id)}
-                            className="text-xl px-2 py-1 rounded"
-                          >
-                            ⋮
-                          </button>
-                          {actionUserId === user.id && (
-                            <div
-                              className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-40 bg-white border rounded shadow-md z-10`}
-                            >
-                              <button
-                                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                                onClick={() => handleMakeInactive(user.id)}
-                              >
-                                Make Inactive
-                              </button>
-                              <button
-                                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                                onClick={() => handleResetPassword(user.email)}
-                              >
-                                Reset Password
-                              </button>
-                              <button
-                                className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
-                                onClick={() => handleDeleteUser(user.id)}
-                              >
-                                Delete User
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-              </div>
-              </div>
-            </Section>
-          </div>
-        ) : (
-          <Section title="Access Denied">
-            <p className="text-red-500">You do not have permission to manage users.</p>
-          </Section>
+        return (
+          <ManageUsers
+            permissions={permissions}
+          />
         );
       case 'classes':
-        return <ClassesPage />;
+        return <ManageClasses />;
       case 'grade':
         return <Section title="Manage Grades" />;
       case 'student_info':
@@ -356,7 +185,7 @@ export default function Dashboard() {
 
   const menuItems = [
     ['dashboard', 'Dashboard'],
-    ...(hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS )   ? [['student_info', 'Student Information']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS) ? [['student_info', 'Student Information']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) ? [['grade', 'Grade']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) ? [['classes', 'Classes']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_USERS) ? [['users', 'Users']] : []),
@@ -445,13 +274,6 @@ export default function Dashboard() {
         <div className="p-2">
           {renderContent()}
         </div>
-
-        {showRegisterUserModal && (
-          <RegisterUser open={showRegisterUserModal} onClose={() => setShowRegisterUserModal(false)} refreshUsers={fetchUsers} />
-        )}
-        {showRegisterRoleModal && (
-          <RegisterRole open={showRegisterRoleModal} onClose={() => setShowRegisterRoleModal(false)} refreshRoles={fetchRoles} />
-        )}
       </div>
     </div>
   );

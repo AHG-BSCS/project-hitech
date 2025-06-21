@@ -60,7 +60,7 @@ export default function RegisterRole({ open, onClose, refreshRoles }) {
       setPermissions(0);
 
       if (typeof refreshRoles === 'function') {
-        refreshRoles(); // ✅ Refresh roles if prop is provided
+        refreshRoles();
       }
     } catch (err) {
       console.error('Error saving role:', err);
