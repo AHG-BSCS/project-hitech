@@ -8,14 +8,14 @@ import {
 import { collection, setDoc, doc } from 'firebase/firestore';
 import PERMISSIONS from '../modules/Permissions';
 
-export default function Register({ open, onClose }) {
+export default function Register({ open, onClose , refreshUsers }) {
   const [form, setForm] = useState({
     email: '',
     employeeId: '',
   });
 
-  const [permissions, setPermissions] = useState(1);
-  const [permissionInput, setPermissionInput] = useState('1');
+  const [permissions, setPermissions] = useState(0);
+  const [permissionInput, setPermissionInput] = useState('0');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -46,7 +46,7 @@ export default function Register({ open, onClose }) {
     setMessage('');
   
     const { email, employeeId } = form;
-    const password = employeeId;
+    const password = 'hitech123';
   
     try {
       const secondaryAuth = getAuth(temp);
@@ -58,13 +58,17 @@ export default function Register({ open, onClose }) {
         email,
         employeeId,
         permissions,
+        active: true,
       });
   
       await secondarySignOut(secondaryAuth);
   
       setMessage('✅ User registered successfully!');
       setForm({ email: '', employeeId: '' });
-      setPermissions(1);
+
+      if (typeof refreshUsers === 'function') {
+        refreshUsers();
+      }
     } catch (err) {
       console.error('Registration failed:', err);
       setMessage(`❌ ${err.message}`);
@@ -99,7 +103,7 @@ export default function Register({ open, onClose }) {
             required
           />
           <p className="text-xs text-gray-500 mb-3">
-            Password will be set to the same value as the Employee ID
+            Default password is 'hitech123'
           </p>
           <input
             name="email"

@@ -14,6 +14,20 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectValue, setSelectValue] = useState('');
   const [permissions, setPermissions] = useState(0);
+  const [users, setUsers] = useState([]);
+  const [searchUser, setSearchUser] = useState('');
+  const [searchSidebar, setSearchSidebar] = useState('');
+  const [actionUserId, setActionUserId] = useState(null);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const snapshot = await getDocs(collection(db, 'users'));
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setUsers(data);
+    };
+  
+    if (section === 'users') fetchUsers();
+  }, [section]);  
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -34,6 +48,12 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [navigate]);
 
+  const fetchUsers = async () => {
+    const snapshot = await getDocs(collection(db, 'users'));
+    const userList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setUsers(userList);
+  };
+
   const handleLogout = async () => {
     await signOut(auth);
     localStorage.removeItem('employeeId');
@@ -47,6 +67,28 @@ export default function Dashboard() {
     if (value === 'logout') handleLogout();
   };
 
+  const handleMakeInactive = async (uid) => {
+    await setDoc(doc(db, 'users', uid), { active: false }, { merge: true });
+    alert('User marked as inactive');
+  };
+  
+  const handleResetPassword = async (email) => {
+    try {
+      await auth.sendPasswordResetEmail(email);
+      alert('Password reset email sent');
+    } catch (err) {
+      alert('Failed to send reset email: ' + err.message);
+    }
+  };
+  
+  const handleDeleteUser = async (uid) => {
+    if (confirm('Are you sure you want to delete this user?')) {
+      await deleteDoc(doc(db, 'users', uid));
+      setUsers((prev) => prev.filter((user) => user.id !== uid));
+      alert('User deleted');
+    }
+  };  
+
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const renderContent = () => {
@@ -55,9 +97,84 @@ export default function Dashboard() {
         return <Section title="Settings" />;
       case 'users':
         return hasPermission(permissions, PERMISSIONS.MANAGE_USERS) ? (
-          <Section title="Manage Users">
-            <button onClick={() => setShowRegisterModal(true)} className="btn bg-blue-500 text-white">Add User</button>
-          </Section>
+          <div>
+            <Section title="Manage Users">
+              <div>
+                <button onClick={() => setShowRegisterModal(true)} className="btn bg-blue-500 text-white">Add User</button>
+              </div>
+            </Section>
+
+            <Section>
+              <div className="w-full flex flex-col space-y-4">
+              <input
+                type="text"
+                placeholder="Search by ID or Email"
+                className="input input-bordered w-full bg-white border border-gray-300 text-black"
+                value={searchUser}
+                onChange={(e) => setSearchUser(e.target.value)}
+              />
+
+              <div className='max-h-[350px] overflow-y-auto border rounded shadow'>
+              <table className="table w-full text-sm text-left text-gray-700">
+                <thead className="bg-gray-100 text-black sticky top-0 z-10">
+                  <tr>
+                    <th className="w-32">Employee ID</th>
+                    <th className="w-64">Email</th>
+                    <th className="w-32">Permissions</th>
+                    <th className="w-32">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users
+                    .filter(user =>
+                      user.employeeId.toLowerCase().includes(searchUser.toLowerCase()) ||
+                      user.email.toLowerCase().includes(searchUser.toLowerCase())
+                    )
+                    .map((user) => (
+                      <tr key={user.id} className="hover:bg-gray-50">
+                        <td>{user.employeeId}</td>
+                        <td>{user.email}</td>
+                        <td>{user.permissions}</td>
+                        <td className="relative">
+                          <button
+                            onClick={() =>
+                              setActionUserId(actionUserId === user.id ? null : user.id)
+                            }
+                            className="text-xl px-2 py-1 rounded hover:bg-gray-200"
+                          >
+                            ⋮
+                          </button>
+                          {actionUserId === user.id && (
+                            <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-md z-10">
+                              <button
+                                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                                onClick={() => handleMakeInactive(user.id)}
+                              >
+                                Make Inactive
+                              </button>
+                              <button
+                                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                                onClick={() => handleResetPassword(user.email)}
+                              >
+                                Reset Password
+                              </button>
+                              <button
+                                className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
+                                onClick={() => handleDeleteUser(user.id)}
+                              >
+                                Delete User
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              </div>
+              </div>
+            </Section>
+          </div>
         ) : (
           <Section title="Access Denied">
             <p className="text-red-500">You do not have permission to manage users.</p>
@@ -116,22 +233,32 @@ export default function Dashboard() {
           </div>
 
           {/* Menu */}
-          <div className="flex-1 bg-white text-black rounded-lg px-4 py-4 mb-8">
-            <input
-              type="text"
-              placeholder="Search"
-              className="w-full p-2 mb-6 rounded-lg border border-blue-900 text-black bg-transparent"
-            />
-            {menuItems.map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setSection(key)}
-                className="w-full flex items-center text-black text-left py-2 rounded-lg hover:bg-blue-100"
-              >
-                <img src="../public/placeholder.svg" alt={`${label} Icon`} className="w-7 h-7 mr-2" />
-                {label}
-              </button>
-            ))}
+          <div className="flex-1 bg-white text-black rounded-lg px-4 py-4 mb-8 max-h-[500]">
+            <div>
+              <input
+                type="text"
+                placeholder="Search"
+                className="w-full p-2 mb-6 rounded-lg border border-blue-900 text-black bg-transparent sticky top-0 z-10"
+                value={searchSidebar}
+                onChange={(e) => setSearchSidebar(e.target.value)}
+              />
+            </div>
+            <div className="max-h-[375px] overflow-y-auto">
+              {menuItems
+                .filter(([_, label]) =>
+                  label.toLowerCase().includes(searchSidebar.toLowerCase())
+                )
+                .map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setSection(key)}
+                    className="w-full flex items-center text-black text-left py-2 rounded-lg hover:bg-blue-100"
+                  >
+                    <img src="../public/placeholder.svg" alt={`${label} Icon`} className="w-7 h-7 mr-2" />
+                    {label}
+                  </button>
+                ))}
+            </div>
           </div>
 
           <button className="btn btn-error text-white w-full mt-auto" onClick={handleLogout}>
@@ -173,7 +300,7 @@ export default function Dashboard() {
         </div>
 
         {showRegisterModal && (
-          <Register open={showRegisterModal} onClose={() => setShowRegisterModal(false)} />
+          <Register open={showRegisterModal} onClose={() => setShowRegisterModal(false)} refreshUsers={fetchUsers} />
         )}
       </div>
     </div>
