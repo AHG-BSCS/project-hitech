@@ -5,66 +5,85 @@ import {
   createUserWithEmailAndPassword,
   signOut as secondarySignOut,
 } from 'firebase/auth';
-import { collection, setDoc, doc } from 'firebase/firestore';
-import PERMISSIONS from '../modules/Permissions';
+import {
+  collection,
+  setDoc,
+  doc,
+  getDocs,
+} from 'firebase/firestore';
 
-export default function Register({ open, onClose , refreshUsers }) {
+export default function Register({ open, onClose, refreshUsers }) {
   const [form, setForm] = useState({
     email: '',
     employeeId: '',
+    role: '',
   });
 
-  const [permissions, setPermissions] = useState(0);
-  const [permissionInput, setPermissionInput] = useState('0');
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   if (!open) return null;
 
   useEffect(() => {
-    setPermissionInput(String(permissions));
-  }, [permissions]);
+    const fetchRoles = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'roles'));
+        const rolesList = snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            name: doc.data().name,
+            permission: doc.data().permission,
+          }))
+          .filter(role => role.name && typeof role.permission === 'number')
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        setRoles(rolesList);
+      } catch (err) {
+        console.error('Failed to fetch roles:', err);
+      }
+    };
+
+    fetchRoles();
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const togglePermission = (bit) => {
-    setPermissions((prev) => prev ^ bit);
-  };
-
-  const handlePermissionInput = (e) => {
-    const val = e.target.value;
-    setPermissionInput(val);
-    const intVal = parseInt(val, 10);
-    if (!isNaN(intVal)) setPermissions(intVal);
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
-  
-    const { email, employeeId } = form;
+
+    const { email, employeeId, role } = {
+      email: form.email.trim(),
+      employeeId: form.employeeId.trim(),
+      role: form.role,
+    };
     const password = 'hitech123';
-  
+
     try {
+      const roleObj = roles.find(r => r.name === role);
+      if (!roleObj) throw new Error('Selected role is invalid');
+
       const secondaryAuth = getAuth(temp);
       const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
       const newUser = userCredential.user;
-  
+
       await setDoc(doc(db, 'users', newUser.uid), {
         uid: newUser.uid,
         email,
         employeeId,
-        permissions,
+        role: roleObj.name,
+        permissions: roleObj.permission,
         active: true,
       });
-  
+
       await secondarySignOut(secondaryAuth);
-  
+
       setMessage('✅ User registered successfully!');
-      setForm({ email: '', employeeId: '' });
+      setForm({ email: '', employeeId: '', role: '' });
 
       if (typeof refreshUsers === 'function') {
         refreshUsers();
@@ -75,7 +94,7 @@ export default function Register({ open, onClose , refreshUsers }) {
     } finally {
       setLoading(false);
     }
-  };  
+  };
 
   return (
     <div
@@ -115,32 +134,36 @@ export default function Register({ open, onClose , refreshUsers }) {
             required
           />
 
-          <label className="text-sm text-gray-700 font-medium mb-1 block">Permission Integer</label>
-          <input
-            type="number"
-            min="0"
-            className="input input-bordered w-full mb-3"
-            value={permissionInput}
-            onChange={handlePermissionInput}
-          />
-
-          <div className="mb-3">
-            <p className="font-semibold text-black mb-2">Permissions:</p>
-            {Object.entries(PERMISSIONS).map(([name, bit]) => (
-              <label key={name} className="flex items-center mb-1 text-sm text-black">
-                <input
-                  type="checkbox"
-                  checked={(permissions & bit) === bit}
-                  onChange={() => togglePermission(bit)}
-                  className="mr-2"
-                />
-                {name.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
-              </label>
+          <label className="text-sm text-gray-700 font-medium mb-1 block">Select Role</label>
+          <select
+            name="role"
+            className="select select-bordered w-full mb-4"
+            value={form.role}
+            onChange={handleChange}
+            required
+          >
+            <option value="" disabled>Select Role</option>
+            {roles.map((r) => (
+              <option key={r.id} value={r.name}>
+                {r.name.charAt(0).toUpperCase() + r.name.slice(1)}
+              </option>
             ))}
-          </div>
+          </select>
 
-          {message && <p className={`text-sm mb-3 ${message.startsWith('✅') ? 'text-green-600' : 'text-red-500'}`}>{message}</p>}
-          <button type="submit" className="btn btn-primary w-full" disabled={loading}>
+          {message && (
+            <p
+              className={`text-sm mb-3 ${
+                message.startsWith('✅') ? 'text-green-600' : 'text-red-500'
+              }`}
+            >
+              {message}
+            </p>
+          )}
+          <button
+            type="submit"
+            className="btn btn-primary w-full"
+            disabled={loading || !form.email || !form.employeeId || !form.role}
+          >
             {loading ? 'Registering...' : 'Register'}
           </button>
         </form>

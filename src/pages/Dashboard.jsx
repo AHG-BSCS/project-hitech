@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import Register from '../modals/Register';
+import RegisterUser from '../modals/RegisterUser';
+import RegisterRole from '../modals/RegisterRole';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 import ClassesPage from './ClassesPage';
@@ -11,12 +12,14 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [section, setSection] = useState('dashboard');
   const [employeeId, setEmployeeId] = useState('');
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showRegisterUserModal, setShowRegisterUserModal] = useState(false);
+  const [showRegisterRoleModal, setShowRegisterRoleModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectValue, setSelectValue] = useState('');
   const [permissions, setPermissions] = useState(0);
   const [users, setUsers] = useState([]);
   const [searchUser, setSearchUser] = useState('');
+  const [roles, setRoles] = useState([]);
   const [searchSidebar, setSearchSidebar] = useState('');
   const [actionUserId, setActionUserId] = useState(null);
   const [dropUp, setDropUp] = useState(false);
@@ -30,6 +33,16 @@ export default function Dashboard() {
     };
   
     if (section === 'users') fetchUsers();
+  }, [section]);  
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      const snapshot = await getDocs(collection(db, 'roles'));
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRoles(data);
+    };
+  
+    if (section === 'roles') fetchRoles();
   }, [section]);  
 
   useEffect(() => {
@@ -57,6 +70,20 @@ export default function Dashboard() {
     setUsers(userList);
   };
 
+  const fetchRoles = async () => {
+    const snapshot = await getDocs(collection(db, 'roles'));
+    const roleList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setRoles(roleList);
+  };
+
+  const getPermissionNames = (permissionInt) => {
+    if (permissionInt === 0) return 'All';
+    return Object.entries(PERMISSIONS)
+      .filter(([_, bit]) => (permissionInt & bit) !== 0)
+      .map(([name]) => name)
+      .join(', ');
+  };
+  
   const handleLogout = async () => {
     await signOut(auth);
     localStorage.removeItem('employeeId');
@@ -112,6 +139,94 @@ export default function Dashboard() {
 
   const renderContent = () => {
     switch (section) {
+      case 'roles':
+        return hasPermission(permissions, PERMISSIONS.MANAGE_ROLES) ? (
+          <div>
+            <Section title="Manage Roles">
+              <div>
+                <button onClick={() => setShowRegisterRoleModal(true)} className="btn bg-blue-500 text-white">
+                  Add Role
+                </button>
+              </div>
+            </Section>
+
+            <Section>
+              <div className="w-full flex flex-col space-y-4">
+                <input
+                  type="text"
+                  placeholder="Search by Role Name"
+                  className="input input-bordered w-full bg-white border border-gray-300 text-black"
+                  value={searchUser}
+                  onChange={(e) => setSearchUser(e.target.value)}
+                />
+
+                <div className="h-[350px] overflow-y-auto border rounded shadow">
+                  <table className="table w-full text-sm text-left text-gray-700">
+                    <thead className="bg-gray-100 text-black sticky top-0 z-10">
+                      <tr>
+                        <th className="w-32">Role Name</th>
+                        <th className="w-32">Permission Integer</th>
+                        <th className="w-64">Permissions</th>
+                        <th className="w-32">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {roles
+                        .filter((role) =>
+                          role.name.toLowerCase().includes(searchUser.toLowerCase())
+                        )
+                        .map((role) => (
+                          <tr
+                            key={role.id}
+                            className={`${
+                              actionUserId === role.id
+                                ? 'bg-blue-200 text-black'
+                                : 'hover:bg-blue-100 hover:text-black'
+                            }`}
+                          >
+                            <td>{role.name}</td>
+                            <td>{role.permission}</td>
+                            <td>{getPermissionNames(role.permission)}</td>
+                            <td className="relative">
+                              <button
+                                ref={(el) => (buttonRefs.current[role.id] = el)}
+                                onClick={() => toggleDropdown(role.id)}
+                                className="text-xl px-2 py-1 rounded"
+                              >
+                                ⋮
+                              </button>
+                              {actionUserId === role.id && (
+                                <div
+                                  className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-40 bg-white border rounded shadow-md z-10`}
+                                >
+                                  <button
+                                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                                    onClick={() => alert('Edit role not implemented')}
+                                  >
+                                    Edit Role
+                                  </button>
+                                  <button
+                                    className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
+                                    onClick={() => alert('Delete role not implemented')}
+                                  >
+                                    Delete Role
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </Section>
+          </div>
+        ) : (
+          <Section title="Access Denied">
+            <p className="text-red-500">You do not have permission to manage roles.</p>
+          </Section>
+        );
       case 'settings':
         return <Section title="Settings" />;
       case 'users':
@@ -119,7 +234,7 @@ export default function Dashboard() {
           <div>
             <Section title="Manage Users">
               <div>
-                <button onClick={() => setShowRegisterModal(true)} className="btn bg-blue-500 text-white">Add User</button>
+                <button onClick={() => setShowRegisterUserModal(true)} className="btn bg-blue-500 text-white">Add User</button>
               </div>
             </Section>
 
@@ -133,13 +248,13 @@ export default function Dashboard() {
                 onChange={(e) => setSearchUser(e.target.value)}
               />
 
-              <div className='max-h-[350px] overflow-y-auto border rounded shadow'>
+              <div className='h-[350px] overflow-y-auto border rounded shadow'>
               <table className="table w-full text-sm text-left text-gray-700">
                 <thead className="bg-gray-100 text-black sticky top-0 z-10">
                   <tr>
                     <th className="w-32">Employee ID</th>
                     <th className="w-64">Email</th>
-                    <th className="w-32">Permissions</th>
+                    <th className="w-32">Role</th>
                     <th className="w-32">Actions</th>
                   </tr>
                 </thead>
@@ -160,7 +275,7 @@ export default function Dashboard() {
                       >
                         <td>{user.employeeId}</td>
                         <td>{user.email}</td>
-                        <td>{user.permissions}</td>
+                        <td>{user.role}</td>
                         <td className="relative">
                           <button
                             ref={(el) => (buttonRefs.current[user.id] = el)}
@@ -245,6 +360,7 @@ export default function Dashboard() {
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) ? [['grade', 'Grade']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) ? [['classes', 'Classes']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_USERS) ? [['users', 'Users']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_ROLES) ? [['roles', 'Roles']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS) ? [['settings', 'Settings']] : []),
   ];  
 
@@ -256,7 +372,11 @@ export default function Dashboard() {
           {/* Profile */}
           <div className="bg-white text-black text-center rounded-lg py-5 mb-8">
             <img src="../public/placeholder.svg" alt="Profile" className="w-10 h-10 mx-auto mb-3" />
-            <p className="text-sm">Welcome, <span className="font-bold">{employeeId || 'User'}</span></p>
+            <p className="text-sm">
+              Welcome, <span className="font-bold">
+                {employeeId ? employeeId : 'Loading...'}
+              </span>
+            </p>
           </div>
 
           {/* Menu */}
@@ -326,8 +446,11 @@ export default function Dashboard() {
           {renderContent()}
         </div>
 
-        {showRegisterModal && (
-          <Register open={showRegisterModal} onClose={() => setShowRegisterModal(false)} refreshUsers={fetchUsers} />
+        {showRegisterUserModal && (
+          <RegisterUser open={showRegisterUserModal} onClose={() => setShowRegisterUserModal(false)} refreshUsers={fetchUsers} />
+        )}
+        {showRegisterRoleModal && (
+          <RegisterRole open={showRegisterRoleModal} onClose={() => setShowRegisterRoleModal(false)} refreshRoles={fetchRoles} />
         )}
       </div>
     </div>
