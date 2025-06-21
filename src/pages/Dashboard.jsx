@@ -15,33 +15,7 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectValue, setSelectValue] = useState('');
   const [permissions, setPermissions] = useState(0);
-  const [users, setUsers] = useState([]);
-  const [searchUser, setSearchUser] = useState('');
-  const [roles, setRoles] = useState([]);
   const [searchSidebar, setSearchSidebar] = useState('');
-  const [actionUserId, setActionUserId] = useState(null);
-  const [dropUp, setDropUp] = useState(false);
-  const buttonRefs = useRef({});
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const snapshot = await getDocs(collection(db, 'users'));
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setUsers(data);
-    };
-  
-    if (section === 'users') fetchUsers();
-  }, [section]);  
-
-  useEffect(() => {
-    const fetchRoles = async () => {
-      const snapshot = await getDocs(collection(db, 'roles'));
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setRoles(data);
-    };
-  
-    if (section === 'roles') fetchRoles();
-  }, [section]);  
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -61,26 +35,6 @@ export default function Dashboard() {
 
     return () => unsubscribe();
   }, [navigate]);
-
-  const fetchUsers = async () => {
-    const snapshot = await getDocs(collection(db, 'users'));
-    const userList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setUsers(userList);
-  };
-
-  const fetchRoles = async () => {
-    const snapshot = await getDocs(collection(db, 'roles'));
-    const roleList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setRoles(roleList);
-  };
-
-  const getPermissionNames = (permissionInt) => {
-    if (permissionInt === 0) return 'All';
-    return Object.entries(PERMISSIONS)
-      .filter(([_, bit]) => (permissionInt & bit) !== 0)
-      .map(([name]) => name)
-      .join(', ');
-  };
   
   const handleLogout = async () => {
     await signOut(auth);
@@ -95,45 +49,7 @@ export default function Dashboard() {
     if (value === 'logout') handleLogout();
   };
 
-  const handleMakeInactive = async (uid) => {
-    await setDoc(doc(db, 'users', uid), { active: false }, { merge: true });
-    alert('User marked as inactive');
-  };
-  
-  const handleResetPassword = async (email) => {
-    try {
-      await auth.sendPasswordResetEmail(email);
-      alert('Password reset email sent');
-    } catch (err) {
-      alert('Failed to send reset email: ' + err.message);
-    }
-  };
-  
-  const handleDeleteUser = async (uid) => {
-    if (confirm('Are you sure you want to delete this user?')) {
-      await deleteDoc(doc(db, 'users', uid));
-      setUsers((prev) => prev.filter((user) => user.id !== uid));
-      alert('User deleted');
-    }
-  };  
-
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-
-  const toggleDropdown = (id) => {
-    if (actionUserId === id) {
-      setActionUserId(null);
-      return;
-    }
-  
-    const button = buttonRefs.current[id];
-    if (button) {
-      const rect = button.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      setDropUp(spaceBelow < 120);
-    }
-  
-    setActionUserId(id);
-  };    
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);  
 
   const renderContent = () => {
     switch (section) {
