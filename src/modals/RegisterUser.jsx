@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db, temp } from '../firebase';
 import {
   getAuth,
@@ -12,20 +12,19 @@ import {
   getDocs,
 } from 'firebase/firestore';
 
-export default function Register({ open, onClose, refreshUsers }) {
+export default function RegisterUser({ open, onClose, refreshUsers }) {
   const [form, setForm] = useState({
     email: '',
     employeeId: '',
     role: '',
   });
-
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  if (!open) return null;
-
   useEffect(() => {
+    if (!open) return;
+
     const fetchRoles = async () => {
       try {
         const snapshot = await getDocs(collection(db, 'roles'));
@@ -45,7 +44,9 @@ export default function Register({ open, onClose, refreshUsers }) {
     };
 
     fetchRoles();
-  }, []);
+  }, [open]);
+
+  if (!open) return null;
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -97,75 +98,83 @@ export default function Register({ open, onClose, refreshUsers }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      onClick={onClose}
-    >
-      <div
-        className="card w-full max-w-sm bg-white shadow-xl p-6 relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl font-bold"
-          onClick={onClose}
-        >
-          &times;
-        </button>
-        <h2 className="text-2xl font-bold text-center mb-4 text-black">Register</h2>
-        <form onSubmit={handleRegister}>
-          <input
-            name="employeeId"
-            placeholder="Employee ID"
-            className="input input-bordered w-full mb-3"
-            value={form.employeeId}
-            onChange={handleChange}
-            required
-          />
-          <p className="text-xs text-gray-500 mb-3">
-            Default password is 'hitech123'
-          </p>
-          <input
-            name="email"
-            type="email"
-            placeholder="Email"
-            className="input input-bordered w-full mb-3"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+      {/* Prevent outside click from closing the modal */}
+      <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-lg font-bold text-black mb-4 text-center">Register New User</h2>
+        <form onSubmit={handleRegister} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-800 mb-1">Employee ID</label>
+            <input
+              name="employeeId"
+              placeholder="Employee ID"
+              className="input input-bordered w-full bg-white border border-gray-300 text-black"
+              value={form.employeeId}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
-          <label className="text-sm text-gray-700 font-medium mb-1 block">Select Role</label>
-          <select
-            name="role"
-            className="select select-bordered w-full mb-4"
-            value={form.role}
-            onChange={handleChange}
-            required
-          >
-            <option value="" disabled>Select Role</option>
-            {roles.map((r) => (
-              <option key={r.id} value={r.name}>
-                {r.name.charAt(0).toUpperCase() + r.name.slice(1)}
-              </option>
-            ))}
-          </select>
+          <div>
+            <label className="block text-sm font-medium text-gray-800 mb-1">Email</label>
+            <input
+              name="email"
+              type="email"
+              placeholder="Email"
+              className="input input-bordered w-full bg-white border border-gray-300 text-black"
+              value={form.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-800 mb-1">Select Role</label>
+            <select
+              name="role"
+              className="select select-bordered w-full bg-white text-black"
+              value={form.role}
+              onChange={handleChange}
+              required
+            >
+              <option value="" disabled>Select Role</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.name}>
+                  {r.name.charAt(0).toUpperCase() + r.name.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <p className="text-xs text-gray-500">Default password is <code>hitech123</code></p>
 
           {message && (
             <p
-              className={`text-sm mb-3 ${
+              className={`text-sm ${
                 message.startsWith('✅') ? 'text-green-600' : 'text-red-500'
               }`}
             >
               {message}
             </p>
           )}
-          <button
-            type="submit"
-            className="btn btn-primary w-full"
-            disabled={loading || !form.email || !form.employeeId || !form.role}
-          >
-            {loading ? 'Registering...' : 'Register'}
-          </button>
+
+          {/* Buttons */}
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn bg-gray-300 hover:bg-gray-400 text-black"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              {loading ? 'Registering...' : 'Register'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

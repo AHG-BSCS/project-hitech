@@ -1,0 +1,174 @@
+import React, { useEffect, useState, useRef } from 'react';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../firebase';
+import PERMISSIONS, { hasPermission } from '../modules/Permissions';
+import RegisterStudent from '../modals/RegisterStudent';
+
+export default function ManageStudents({ permissions }) {
+  const [students, setStudents] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [actionStudentId, setActionStudentId] = useState(null);
+  const [dropUp, setDropUp] = useState(false);
+  const buttonRefs = useRef({});
+  const [showRegisterStudentModal, setShowRegisterStudentModal] = useState(false);
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    const snapshot = await getDocs(collection(db, 'students'));
+    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setStudents(data);
+  };
+
+  const handleDeleteStudent = async (studentId) => {
+    const confirm = window.confirm('Are you sure you want to delete this student?');
+    if (!confirm) return;
+
+    try {
+      await deleteDoc(doc(db, 'students', studentId));
+      fetchStudents();
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      alert('Failed to delete student.');
+    }
+  };
+
+  const toggleDropdown = (id) => {
+    if (actionStudentId === id) {
+      setActionStudentId(null);
+      return;
+    }
+
+    const button = buttonRefs.current[id];
+    if (button) {
+      const rect = button.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setDropUp(spaceBelow < 120);
+    }
+
+    setActionStudentId(id);
+  };
+
+  if (!hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS)) {
+    return (
+      <Section title="Access Denied">
+        <p className="text-red-500">You do not have permission to manage students.</p>
+      </Section>
+    );
+  }
+
+  return (
+    <div>
+      <Section title="Manage Students">
+        <button
+          onClick={() => setShowRegisterStudentModal(true)}
+          className="btn bg-blue-500 text-white"
+        >
+          Add Student
+        </button>
+      </Section>
+
+      <Section>
+        <div className="w-full flex flex-col space-y-4">
+          <input
+            type="text"
+            placeholder="Search by Student Name"
+            className="input input-bordered w-full bg-white border border-gray-300 text-black"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <div className="h-[350px] overflow-y-auto border rounded shadow">
+            <table className="table w-full text-sm text-left text-gray-700">
+            <thead className="bg-gray-100 text-black sticky top-0 z-10">
+                <tr>
+                    <th className="w-32">LRN</th>
+                    <th className="w-32">First Name</th>
+                    <th className="w-32">Last Name</th>
+                    <th className="w-24">Gender</th>
+                    <th className="w-32">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {students
+                    .filter((student) => {
+                    const term = searchTerm.toLowerCase();
+                    return (
+                        student.firstName?.toLowerCase().includes(term) ||
+                        student.lastName?.toLowerCase().includes(term) ||
+                        student.learningReferenceNumber?.includes(term)
+                    );
+                    })
+                    .map((student) => (
+                    <tr
+                        key={student.id}
+                        className={`${
+                        actionStudentId === student.id
+                            ? 'bg-blue-200 text-black'
+                            : 'hover:bg-blue-100 hover:text-black'
+                        }`}
+                    >
+                        <td>{student.learningReferenceNumber}</td>
+                        <td>{student.firstName}</td>
+                        <td>{student.lastName}</td>
+                        <td>{student.gender}</td>
+                        <td className="relative">
+                        <button
+                            ref={(el) => (buttonRefs.current[student.id] = el)}
+                            onClick={() => toggleDropdown(student.id)}
+                            className="text-xl px-2 py-1 rounded"
+                        >
+                            ⋮
+                        </button>
+                        {actionStudentId === student.id && (
+                            <div
+                            className={`absolute ${
+                                dropUp ? 'bottom-full mb-2' : 'mt-2'
+                            } right-0 w-40 bg-white border rounded shadow-md z-10`}
+                            >
+                            <button
+                                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                                onClick={() => alert('Edit student not implemented')}
+                            >
+                                Edit Student
+                            </button>
+                            <button
+                                className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
+                                onClick={() => handleDeleteStudent(student.id)}
+                            >
+                                Delete Student
+                            </button>
+                            </div>
+                        )}
+                        </td>
+                    </tr>
+                    ))}
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </Section>
+
+      {showRegisterStudentModal && (
+        <RegisterStudent
+          open={showRegisterStudentModal}
+          onClose={() => setShowRegisterStudentModal(false)}
+          refreshStudents={fetchStudents}
+        />
+      )}
+    </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <section className="bg-white p-6 rounded-lg shadow-md border border-gray-300 mb-8">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-black">{title}</h2>
+        {children}
+      </div>
+    </section>
+  );
+}

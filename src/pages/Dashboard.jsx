@@ -7,6 +7,7 @@ import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 import ManageClasses from '../components/ManageClasses';
 import ManageRoles from '../components/ManageRoles';
 import ManageUsers from '../components/ManageUsers';
+import ManageStudents from '../components/ManageStudents';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -73,9 +74,9 @@ export default function Dashboard() {
         return <Section title="Manage Grades" />;
       case 'student_info':
         return (
-          <Section title="Manage Student Information">
-            <button className="btn bg-purple-700 text-white hover:bg-purple-800">Create</button>
-          </Section>
+          <ManageStudents
+            permissions={permissions}
+          />
         );
       case 'dashboard':
       default:

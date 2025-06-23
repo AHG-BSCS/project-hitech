@@ -18,7 +18,7 @@ export default function RegisterRole({ open, onClose, refreshRoles }) {
       setPermissionInput(updated.toString());
       return updated;
     });
-  };  
+  };
 
   const handlePermissionInput = (e) => {
     const val = e.target.value;
@@ -71,63 +71,74 @@ export default function RegisterRole({ open, onClose, refreshRoles }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      onClick={onClose}
-    >
-      <div
-        className="card w-full max-w-sm bg-white shadow-xl p-6 relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl font-bold"
-          onClick={onClose}
-        >
-          &times;
-        </button>
-        <h2 className="text-2xl font-bold text-center mb-4 text-black">Register Role</h2>
-        <form onSubmit={handleSubmit}>
-          <input
-            name="roleName"
-            placeholder="Role Name"
-            className="input input-bordered w-full mb-3"
-            value={roleName}
-            onChange={(e) => setRoleName(e.target.value)}
-            required
-          />
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+      <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-lg font-bold mb-4 text-center text-black">Register Role</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-800 mb-1">Role Name</label>
+            <input
+              name="roleName"
+              placeholder="Role Name"
+              className="input input-bordered w-full bg-white border border-gray-300 text-black"
+              value={roleName}
+              onChange={(e) => setRoleName(e.target.value)}
+              required
+            />
+          </div>
 
-          <label className="text-sm text-gray-700 font-medium mb-1 block">Permission Integer</label>
-          <input
-            type="number"
-            min="0"
-            className="input input-bordered w-full mb-3"
-            value={permissionInput}
-            onChange={handlePermissionInput}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-800 mb-1">Permission Integer</label>
+            <input
+              type="number"
+              min="0"
+              className="input input-bordered w-full bg-white border border-gray-300 text-black"
+              value={permissionInput}
+              onChange={handlePermissionInput}
+            />
+          </div>
 
-          <div className="mb-3">
-            <p className="font-semibold text-black mb-2">Permission:</p>
-            {Object.entries(PERMISSIONS).map(([name, bit]) => (
-              <label key={name} className="flex items-center mb-1 text-sm text-black">
-                <input
-                  type="checkbox"
-                  checked={permissions === 0 || (permissions & bit) === bit}
-                  onChange={() => togglePermission(bit)}
-                  className="mr-2"
-                />
-                {name.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
-              </label>
-            ))}
+          <div>
+            <p className="font-semibold text-black mb-2">Permissions:</p>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
+              {Object.entries(PERMISSIONS).map(([name, bit]) => (
+                <label key={name} className="flex items-center text-black">
+                  <input
+                    type="checkbox"
+                    checked={permissions === 0 || (permissions & bit) === bit}
+                    onChange={() => togglePermission(bit)}
+                    className="mr-2"
+                  />
+                  {name.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
+                </label>
+              ))}
+            </div>
           </div>
 
           {message && (
-            <p className={`text-sm mb-3 ${message.startsWith('✅') ? 'text-green-600' : 'text-red-500'}`}>
+            <p className={`text-sm ${message.startsWith('✅') ? 'text-green-600' : 'text-red-500'}`}>
               {message}
             </p>
           )}
-          <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-            {loading ? 'Saving...' : 'Save Role'}
-          </button>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn bg-gray-300 hover:bg-gray-400 text-black"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn bg-blue-500 hover:bg-blue-600 text-white"
+              disabled={loading}
+            >
+              {loading ? 'Saving...' : 'Save Role'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
