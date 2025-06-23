@@ -87,7 +87,7 @@ export default function ManageStudents({ permissions }) {
                     <th className="w-32">LRN</th>
                     <th className="w-32">First Name</th>
                     <th className="w-32">Last Name</th>
-                    <th className="w-24">Gender</th>
+                    <th className="w-24">Sex</th>
                     <th className="w-32">Actions</th>
                 </tr>
                 </thead>
@@ -113,7 +113,7 @@ export default function ManageStudents({ permissions }) {
                         <td>{student.learningReferenceNumber}</td>
                         <td>{student.firstName}</td>
                         <td>{student.lastName}</td>
-                        <td>{student.gender}</td>
+                        <td>{student.sex}</td>
                         <td className="relative">
                         <button
                             ref={(el) => (buttonRefs.current[student.id] = el)}

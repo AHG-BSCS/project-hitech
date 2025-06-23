@@ -6,7 +6,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
   const [learningReferenceNumber, setLRN] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [gender, setGender] = useState('');
+  const [sex, setSex] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -15,7 +15,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
-    if (!learningReferenceNumber.trim() || !firstName.trim() || !lastName.trim() || !gender) {
+    if (!learningReferenceNumber.trim() || !firstName.trim() || !lastName.trim() || !sex) {
       setMessage('⚠️ Please complete all fields.');
       return;
     }
@@ -27,7 +27,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
         learningReferenceNumber,
         firstName,
         lastName,
-        gender,
+        sex,
         createdAt: new Date(),
       });
 
@@ -37,7 +37,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
       setLRN('');
       setFirstName('');
       setLastName('');
-      setGender('');
+      setSex('');
       setMessage('✅ Student added successfully!');
     } catch (error) {
       console.error('Error registering student:', error);
@@ -89,11 +89,11 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
             <label className="block text-sm font-medium text-gray-800 mb-1">Sex</label>
             <select
               className="select select-bordered w-full bg-white text-black"
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
+              value={sex}
+              onChange={(e) => setSex(e.target.value)}
               required
             >
-              <option value="" disabled>Select Gender</option>
+              <option value="" disabled>Select Sex</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
             </select>
