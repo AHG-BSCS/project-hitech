@@ -86,7 +86,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-800 mb-1">Gender</label>
+            <label className="block text-sm font-medium text-gray-800 mb-1">Sex</label>
             <select
               className="select select-bordered w-full bg-white text-black"
               value={gender}
@@ -96,7 +96,6 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
               <option value="" disabled>Select Gender</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
-              <option value="Other">Other</option>
             </select>
           </div>
 
