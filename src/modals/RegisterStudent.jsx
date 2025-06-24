@@ -1,14 +1,29 @@
-import React, { useState } from 'react';
-import { addDoc, collection } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function RegisterStudent({ open, onClose, refreshStudents }) {
+export default function RegisterStudent({ open, onClose, refreshStudents, studentToEdit }) {
   const [learningReferenceNumber, setLRN] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [sex, setSex] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (studentToEdit) {
+      setLRN(studentToEdit.learningReferenceNumber || '');
+      setFirstName(studentToEdit.firstName || '');
+      setLastName(studentToEdit.lastName || '');
+      setSex(studentToEdit.sex || '');
+    } else {
+      setLRN('');
+      setFirstName('');
+      setLastName('');
+      setSex('');
+    }
+    setMessage('');
+  }, [studentToEdit]);
 
   if (!open) return null;
 
@@ -23,25 +38,31 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
     setLoading(true);
 
     try {
-      await addDoc(collection(db, 'students'), {
-        learningReferenceNumber,
-        firstName,
-        lastName,
-        sex,
-        createdAt: new Date(),
-      });
+      if (studentToEdit) {
+        const studentRef = doc(db, 'students', studentToEdit.id);
+        await updateDoc(studentRef, {
+          learningReferenceNumber,
+          firstName,
+          lastName,
+          sex,
+        });
+        setMessage('✅ Student updated successfully!');
+        onClose();
+      } else {
+        await addDoc(collection(db, 'students'), {
+          learningReferenceNumber,
+          firstName,
+          lastName,
+          sex,
+          createdAt: new Date(),
+        });
+        setMessage('✅ Student added successfully!');
+      }
 
       refreshStudents();
-
-      // Clear inputs and show success message
-      setLRN('');
-      setFirstName('');
-      setLastName('');
-      setSex('');
-      setMessage('✅ Student added successfully!');
     } catch (error) {
-      console.error('Error registering student:', error);
-      setMessage('❌ Failed to register student.');
+      console.error('Error saving student:', error);
+      setMessage('❌ Failed to save student.');
     } finally {
       setLoading(false);
     }
@@ -50,12 +71,12 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
       <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg text-black font-bold mb-4">Register New Student</h2>
+        <h2 className="text-lg text-black font-bold mb-4">{studentToEdit ? 'Edit Student' : 'Register New Student'}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-800 mb-1">Learning Reference No.</label>
             <input
-              type="text"
+              type="number"
               className="input input-bordered w-full bg-white border border-gray-300 text-black"
               value={learningReferenceNumber}
               onChange={(e) => (setLRN(e.target.value), setMessage(''))}
@@ -88,7 +109,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
           <div>
             <label className="block text-sm font-medium text-gray-800 mb-1">Sex</label>
             <select
-              className="select select-bordered w-full bg-white text-black"
+              className="select select-bordered border-gray-300 w-full bg-white text-black"
               value={sex}
               onChange={(e) => (setSex(e.target.value), setMessage(''))}
               required
@@ -122,7 +143,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
               type="submit"
               className="btn bg-blue-500 hover:bg-blue-600 text-white"
             >
-              {loading ? 'Registering...' : 'Register'}
+              {loading ? (studentToEdit ? 'Updating...' : 'Registering...') : studentToEdit ? 'Update' : 'Register'}
             </button>
           </div>
         </form>

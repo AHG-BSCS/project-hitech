@@ -11,6 +11,7 @@ export default function ManageStudents({ permissions }) {
   const [dropUp, setDropUp] = useState(false);
   const buttonRefs = useRef({});
   const [showRegisterStudentModal, setShowRegisterStudentModal] = useState(false);
+  const [studentToEdit, setStudentToEdit] = useState(null);
 
   useEffect(() => {
     fetchStudents();
@@ -64,7 +65,7 @@ export default function ManageStudents({ permissions }) {
       <Section title="Manage Students">
         <button
           onClick={() => setShowRegisterStudentModal(true)}
-          className="btn bg-blue-500 text-white"
+          className="btn bg-blue-600 text-white"
         >
           Add Student
         </button>
@@ -76,7 +77,7 @@ export default function ManageStudents({ permissions }) {
             type="text"
             placeholder="Search by Student Name"
             className="input input-bordered w-full bg-white border border-gray-300 text-black"
-            value={searchTerm}
+            value={searchTerm.toUpperCase()}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
 
@@ -94,10 +95,10 @@ export default function ManageStudents({ permissions }) {
                 <tbody>
                 {students
                     .filter((student) => {
-                    const term = searchTerm.toLowerCase();
+                    const term = searchTerm.toUpperCase();
                     return (
-                        student.firstName?.toLowerCase().includes(term) ||
-                        student.lastName?.toLowerCase().includes(term) ||
+                        student.firstName?.toUpperCase().includes(term) ||
+                        student.lastName?.toUpperCase().includes(term) ||
                         student.learningReferenceNumber?.includes(term)
                     );
                     })
@@ -130,7 +131,11 @@ export default function ManageStudents({ permissions }) {
                             >
                             <button
                                 className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                                onClick={() => alert('Edit student not implemented')}
+                                onClick={() => {
+                                  setStudentToEdit(student);
+                                  setShowRegisterStudentModal(true);
+                                  setActionStudentId(null);
+                                }}                                
                             >
                                 Edit Student
                             </button>
@@ -152,11 +157,15 @@ export default function ManageStudents({ permissions }) {
       </Section>
 
       {showRegisterStudentModal && (
-        <RegisterStudent
+          <RegisterStudent
           open={showRegisterStudentModal}
-          onClose={() => setShowRegisterStudentModal(false)}
+          onClose={() => {
+            setShowRegisterStudentModal(false);
+            setStudentToEdit(null);
+          }}
           refreshStudents={fetchStudents}
-        />
+          studentToEdit={studentToEdit}
+        />      
       )}
     </div>
   );

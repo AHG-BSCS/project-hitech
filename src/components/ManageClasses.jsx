@@ -31,7 +31,7 @@ export default function ManageClasses() {
   };
 
   return (
-    <div className="p-6">
+    <div>
       <Section title="Manage Classes">
         <button
           className="btn bg-blue-600 text-white"
