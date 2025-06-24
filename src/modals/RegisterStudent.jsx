@@ -58,7 +58,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
               type="text"
               className="input input-bordered w-full bg-white border border-gray-300 text-black"
               value={learningReferenceNumber}
-              onChange={(e) => setLRN(e.target.value)}
+              onChange={(e) => (setLRN(e.target.value), setMessage(''))}
               required
             />
           </div>
@@ -69,7 +69,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
               type="text"
               className="input input-bordered w-full bg-white border border-gray-300 text-black"
               value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              onChange={(e) => (setFirstName(e.target.value), setMessage(''))}
               required
             />
           </div>
@@ -80,7 +80,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
               type="text"
               className="input input-bordered w-full bg-white border border-gray-300 text-black"
               value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              onChange={(e) => (setLastName(e.target.value), setMessage(''))}
               required
             />
           </div>
@@ -90,7 +90,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents }) {
             <select
               className="select select-bordered w-full bg-white text-black"
               value={sex}
-              onChange={(e) => setSex(e.target.value)}
+              onChange={(e) => (setSex(e.target.value), setMessage(''))}
               required
             >
               <option value="" disabled>Select Sex</option>

@@ -50,6 +50,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    setMessage('');
   };
 
   const handleRegister = async (e) => {
@@ -83,8 +84,8 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
 
       await secondarySignOut(secondaryAuth);
 
-      setMessage('✅ User registered successfully!');
       setForm({ email: '', employeeId: '', role: '' });
+      setMessage('✅ User registered successfully!');
 
       if (typeof refreshUsers === 'function') {
         refreshUsers();

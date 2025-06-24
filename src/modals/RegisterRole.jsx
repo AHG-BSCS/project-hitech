@@ -54,10 +54,10 @@ export default function RegisterRole({ open, onClose, refreshRoles }) {
         permission: permissions,
       });
 
-      setMessage('✅ Role saved successfully!');
       setRoleName('');
       setPermissionInput('0');
       setPermissions(0);
+      setMessage('✅ Role saved successfully!');
 
       if (typeof refreshRoles === 'function') {
         refreshRoles();
@@ -82,7 +82,7 @@ export default function RegisterRole({ open, onClose, refreshRoles }) {
               placeholder="Role Name"
               className="input input-bordered w-full bg-white border border-gray-300 text-black"
               value={roleName}
-              onChange={(e) => setRoleName(e.target.value)}
+              onChange={(e) => (setRoleName(e.target.value), setMessage(''))}
               required
             />
           </div>
@@ -94,7 +94,7 @@ export default function RegisterRole({ open, onClose, refreshRoles }) {
               min="0"
               className="input input-bordered w-full bg-white border border-gray-300 text-black"
               value={permissionInput}
-              onChange={handlePermissionInput}
+              onChange={() => (handlePermissionInput, setMessage(''))}
             />
           </div>
 
@@ -106,7 +106,7 @@ export default function RegisterRole({ open, onClose, refreshRoles }) {
                   <input
                     type="checkbox"
                     checked={permissions === 0 || (permissions & bit) === bit}
-                    onChange={() => togglePermission(bit)}
+                    onChange={() => (togglePermission(bit), setMessage(''))}
                     className="mr-2"
                   />
                   {name.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
