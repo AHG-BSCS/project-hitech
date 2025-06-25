@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { useSystemSettings } from '../context/SystemSettingsContext';
 
 export default function Login() {
@@ -12,6 +12,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { settings, loading: settingsLoading } = useSystemSettings();
+  const [bgImage, setBgImage] = useState(null);
+  const [bgSettings, setBgSettings] = useState(null);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -53,6 +55,36 @@ export default function Login() {
     if (isAuthenticated) navigate('/dashboard');
   }, []);
 
+  useEffect(() => {
+    // Fetch bgImage from Firestore (system/bgImage)
+    const fetchBgImage = async () => {
+      try {
+        const bgImageDoc = await getDoc(doc(db, 'system', 'bgImage'));
+        if (bgImageDoc.exists()) {
+          setBgImage(bgImageDoc.data().bgBase64 || null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch bgImage:', err);
+      }
+    };
+    fetchBgImage();
+  }, []);
+
+  useEffect(() => {
+    // Fetch bgSettings from Firestore (system/bgSettings)
+    const fetchBgSettings = async () => {
+      try {
+        const bgSettingsDoc = await getDoc(doc(db, 'system', 'bgSettings'));
+        if (bgSettingsDoc.exists()) {
+          setBgSettings(bgSettingsDoc.data());
+        }
+      } catch (err) {
+        console.error('Failed to fetch bgSettings:', err);
+      }
+    };
+    fetchBgSettings();
+  }, []);
+
   if (settingsLoading) return <div className="flex items-center justify-center h-screen">Loading system settings...</div>;
 
   // Login card location
@@ -62,10 +94,16 @@ export default function Login() {
 
   // Login page background
   let bgStyle = {};
-  if (settings?.bgType === 'color') {
+  if (bgSettings) {
+    if (bgSettings.bgType === 'color') {
+      bgStyle.background = bgSettings.bgValue || '#f3f4f6';
+    } else if (bgSettings.bgType === 'image' && bgImage) {
+      bgStyle.background = `url(${bgImage}) center/cover no-repeat`;
+    }
+  } else if (settings?.bgType === 'color') {
     bgStyle.background = settings.bgValue || '#f3f4f6';
-  } else if (settings?.bgType === 'image' && settings.bgBase64) {
-    bgStyle.background = `url(${settings.bgBase64}) center/cover no-repeat`;
+  } else if (settings?.bgType === 'image' && bgImage) {
+    bgStyle.background = `url(${bgImage}) center/cover no-repeat`;
   }
 
   return (

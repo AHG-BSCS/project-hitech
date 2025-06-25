@@ -19,32 +19,27 @@ const fileToBase64Scaled = (file, maxBytes = 500 * 1024) => {
       const img = new window.Image();
       img.onload = () => {
         let [w, h] = [img.width, img.height];
-        let quality = 0.92;
         let canvas = document.createElement('canvas');
         let ctx = canvas.getContext('2d');
         let dataUrl;
         let step = 0;
+        let scale = 1;
         do {
-          // Scale down if too large
-          let scale = Math.sqrt((maxBytes / (file.size || 1)) * 0.9);
-          if (scale < 1) {
-            w = Math.floor(img.width * scale);
-            h = Math.floor(img.height * scale);
-          }
           canvas.width = w;
           canvas.height = h;
           ctx.clearRect(0, 0, w, h);
           ctx.drawImage(img, 0, 0, w, h);
-          dataUrl = canvas.toDataURL('image/jpeg', quality);
-          // Reduce quality if still too large
+          dataUrl = canvas.toDataURL('image/png');
+          // If still too large, reduce dimensions
           if (dataUrl.length * 0.75 > maxBytes) {
-            quality -= 0.05;
-            if (quality < 0.5) break;
+            scale = Math.sqrt(maxBytes / (dataUrl.length * 0.75));
+            w = Math.max(1, Math.floor(w * scale));
+            h = Math.max(1, Math.floor(h * scale));
           } else {
             break;
           }
           step++;
-        } while (step < 10);
+        } while (step < 20); // allow more steps for aggressive downscaling
         resolve(dataUrl);
       };
       img.onerror = reject;
@@ -61,6 +56,7 @@ const PortalSettings = () => {
   const [schoolId, setSchoolId] = useState('');
   const [logo, setLogo] = useState(null);
   const [logoBase64, setLogoBase64] = useState('');
+  const [logoSvg, setLogoSvg] = useState('');
   const [logoMode, setLogoMode] = useState('school');
   const [loginCardLocation, setLoginCardLocation] = useState('center');
   const [bgType, setBgType] = useState('color');
@@ -86,14 +82,29 @@ const PortalSettings = () => {
         setColorPalette(data.colorPalette || '#2563eb');
         setSchoolId(data.schoolId || '');
         setLogoBase64(data.logoBase64 || '');
+        setLogoSvg(data.logoSvg || '');
         setLogoMode(data.logoMode || 'school');
-        setBgType(data.bgType || 'color');
-        setBgValue(data.bgValue || '#f3f4f6');
-        setBgBase64(data.bgBase64 || '');
         setDivision(data.division || '');
         setRegion(data.region || '');
         setLogoChanged(false);
         setBgChanged(false);
+      }
+
+      // Fetch background settings from system/bgSettings
+      const bgSettingsRef = doc(db, 'system', 'bgSettings');
+      const bgSettingsSnap = await getDoc(bgSettingsRef);
+      if (bgSettingsSnap.exists()) {
+        const bgData = bgSettingsSnap.data();
+        setBgType(bgData.bgType || 'color');
+        setBgValue(bgData.bgValue || '#f3f4f6');
+      }
+      // If background is image, load from separate doc
+      if ((bgSettingsSnap.data()?.bgType || 'color') === 'image') {
+        const bgDocRef = doc(db, 'system', 'bgImage');
+        const bgDocSnap = await getDoc(bgDocRef);
+        setBgBase64(bgDocSnap.exists() ? bgDocSnap.data().bgBase64 || '' : '');
+      } else {
+        setBgBase64('');
       }
     };
     fetchSettings();
@@ -101,10 +112,23 @@ const PortalSettings = () => {
 
   const handleLogoChange = async (e) => {
     if (e.target.files && e.target.files[0]) {
-      setLogo(e.target.files[0]);
-      const base64 = await fileToBase64Scaled(e.target.files[0]);
-      setLogoBase64(base64);
-      setLogoChanged(true);
+      const file = e.target.files[0];
+      setLogo(file);
+      if (file.type === 'image/svg+xml') {
+        // Read SVG as text
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          setLogoSvg(ev.target.result);
+          setLogoBase64('');
+          setLogoChanged(true);
+        };
+        reader.readAsText(file);
+      } else {
+        const base64 = await fileToBase64Scaled(file);
+        setLogoBase64(base64);
+        setLogoSvg('');
+        setLogoChanged(true);
+      }
     }
   };
 
@@ -120,9 +144,15 @@ const PortalSettings = () => {
   const handleSave = async () => {
     setLoading(true);
     setError('');
-    // Check if base64 images are under 1MB
-    if (logoChanged && logoBase64 && logoBase64.length * 0.75 > 1000000) {
-      setError('Logo image is too large after scaling. Please use a smaller image.');
+    // Check SVG size if SVG is used
+    if (logoChanged && logoSvg && new Blob([logoSvg]).size > 500 * 1024) {
+      setError('SVG logo is too large. Please use an SVG under 500KB.');
+      setLoading(false);
+      return;
+    }
+    // Check base64 image size if not SVG
+    if (logoChanged && logoBase64 && logoBase64.length * 0.75 > 500 * 1024) {
+      setError('Logo image is too large after scaling. Please use an image under 500KB.');
       setLoading(false);
       return;
     }
@@ -131,28 +161,48 @@ const PortalSettings = () => {
       setLoading(false);
       return;
     }
-    // Prepare data to save
     const docRef = doc(db, 'system', 'settings');
     const docSnap = await getDoc(docRef);
     let prevLogoBase64 = logoBase64;
+    let prevLogoSvg = logoSvg;
     let prevBgBase64 = bgBase64;
     if (docSnap.exists()) {
       const data = docSnap.data();
-      if (!logoChanged) prevLogoBase64 = data.logoBase64 || '';
-      if (!bgChanged) prevBgBase64 = data.bgBase64 || '';
+      if (!logoChanged) {
+        prevLogoBase64 = data.logoBase64 || '';
+        prevLogoSvg = data.logoSvg || '';
+      }
+      if (!bgChanged && data.bgType === 'image') {
+        // If not changed and image, load from bgImage doc
+        const bgDocRef = doc(db, 'system', 'bgImage');
+        const bgDocSnap = await getDoc(bgDocRef);
+        prevBgBase64 = bgDocSnap.exists() ? bgDocSnap.data().bgBase64 || '' : '';
+      } else if (!bgChanged) {
+        prevBgBase64 = data.bgBase64 || '';
+      }
     }
-    await setDoc(docRef, {
+    // Save background image in separate doc if type is image
+    if (bgType === 'image' && (bgChanged || !bgBase64)) {
+      const bgDocRef = doc(db, 'system', 'bgImage');
+      await setDoc(bgDocRef, { bgBase64: bgBase64 });
+    }
+    // Save background settings in system/bgSettings
+    const bgSettingsRef = doc(db, 'system', 'bgSettings');
+    await setDoc(bgSettingsRef, {
+      bgType,
+      bgValue: bgType === 'color' ? bgValue : '',
+    });
+    // Save other settings in system/settings (without bgType/bgValue/bgBase64)
+    await setDoc(doc(db, 'system', 'settings'), {
       titleBar,
       colorPalette,
       schoolId,
-      logoBase64: prevLogoBase64,
+      logoBase64,
+      logoSvg,
       logoMode,
-      bgType,
-      bgValue: bgType === 'color' ? bgValue : '',
-      bgBase64: bgType === 'image' ? prevBgBase64 : '',
       division,
       region,
-    });
+    }, { merge: true });
     setLoading(false);
     setSuccess(true);
     setLogoChanged(false);
@@ -223,10 +273,15 @@ const PortalSettings = () => {
             <label className="block font-medium mb-1">School Logo</label>
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,.svg"
               onChange={handleLogoChange}
             />
-            {(logoBase64) && (
+            {(logoSvg) && (
+              <div className="mt-2 h-16 rounded border bg-white flex items-center justify-center" style={{height:'4rem'}}>
+                <div dangerouslySetInnerHTML={{ __html: logoSvg }} style={{height:'100%'}} />
+              </div>
+            )}
+            {(!logoSvg && logoBase64) && (
               <img
                 src={logoBase64}
                 alt="School Logo Preview"
