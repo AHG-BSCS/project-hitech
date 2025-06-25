@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function RegisterStudent({ open, onClose, refreshStudents, studentToEdit }) {
+export default function RegisterStudent({ open, onClose, refreshStudents, studentToEdit, viewOnly = false }) {
   const [learningReferenceNumber, setLRN] = useState('');
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
@@ -82,17 +82,24 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
       <div className="bg-white rounded-lg shadow-md p-6 w-full h-auto mx-20 my-20" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg text-black font-bold mb-4">{studentToEdit ? 'Edit Student' : 'Register New Student'}</h2>
+      <h2 className="text-lg text-black font-bold mb-4">
+        {viewOnly
+          ? 'View Student'
+          : studentToEdit
+          ? 'Edit Student'
+          : 'Register New Student'}
+      </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-800 mb-1">Learning Reference No.</label>
             <input
               type="number"
-              className="input input-bordered w-[500px] bg-white border border-gray-300 text-black"
+              className={`input input-bordered w-full bg-white border border-gray-300 text-black ${viewOnly ? 'cursor-default' : ''}`}
               value={learningReferenceNumber}
               onChange={(e) => (setLRN(e.target.value), setMessage(''))}
               placeholder='E.g. 109791000000'
               required
+              readOnly={viewOnly}
             />
           </div>
 
@@ -101,42 +108,46 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
               <label className="block text-sm font-medium text-gray-800 mb-1">Last Name</label>
               <input
                 type="text"
-                className="input input-bordered w-full bg-white border border-gray-300 text-black"
+                className={`input input-bordered w-full bg-white border border-gray-300 text-black ${viewOnly ? 'cursor-default' : ''}`}
                 value={lastName}
                 onChange={(e) => (setLastName(e.target.value), setMessage(''))}
                 placeholder='E.g. Dela Cruz'
                 required
+                readOnly={viewOnly}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">First Name</label>
               <input
                 type="text"
-                className="input input-bordered w-full bg-white border border-gray-300 text-black"
+                className={`input input-bordered w-full bg-white border border-gray-300 text-black ${viewOnly ? 'cursor-default' : ''}`}
                 value={firstName}
                 onChange={(e) => (setFirstName(e.target.value), setMessage(''))}
                 placeholder='E.g. Juan'
                 required
+                readOnly={viewOnly}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">Middle Name</label>
               <input
                 type="text"
-                className="input input-bordered w-full bg-white border border-gray-300 text-black"
+                className={`input input-bordered w-full bg-white border border-gray-300 text-black ${viewOnly ? 'cursor-default' : ''}`}
                 value={middleName}
                 onChange={(e) => (setMiddleName(e.target.value), setMessage(''))}
                 placeholder='E.g. Reyes'
+                readOnly={viewOnly}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">Extension</label>
               <input
                 type="text"
-                className="input input-bordered w-full bg-white border border-gray-300 text-black"
+                className={`input input-bordered w-full bg-white border border-gray-300 text-black ${viewOnly ? 'cursor-default' : ''}`}
                 value={nameExtension}
                 onChange={(e) => (setNameExtension(e.target.value), setMessage(''))}
                 placeholder='E.g. Jr, II, III'
+                readOnly={viewOnly}
               />
             </div>
           </div>
@@ -146,10 +157,11 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
               <label className="block text-sm font-medium text-gray-800 mb-1">Date</label>
               <input
                 type="date"
-                className="input input-bordered w-full bg-white border border-gray-300 text-black pr-10"
+                className={`input input-bordered w-full bg-white border border-gray-300 text-black pr-10 ${viewOnly ? 'cursor-default' : ''}`}
                 value={birthdate}
                 onChange={(e) => setBirthdate(e.target.value)}
                 required
+                readOnly={viewOnly}
               />
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -167,22 +179,24 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
-                    className="form-radio text-blue-600"
+                    className="form-radio text-blue-600 bg-white"
                     name="sex"
                     value="Male"
                     checked={sex === 'Male'}
                     onChange={(e) => (setSex(e.target.value), setMessage(''))}
+                    disabled={viewOnly}
                   />
                   <span className="ml-2 text-black">Male</span>
                 </label>
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
-                    className="form-radio text-blue-600"
+                    className="form-radio text-blue-600 bg-white"
                     name="sex"
                     value="Female"
                     checked={sex === 'Female'}
                     onChange={(e) => (setSex(e.target.value), setMessage(''))}
+                    disabled={viewOnly}
                   />
                   <span className="ml-2 text-black">Female</span>
                 </label>
@@ -197,20 +211,36 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
           )}
 
           <div className="flex justify-end space-x-2 mt-auto pt-4">
+            {viewOnly && (<>
+              <button
+                type="button"
+                className="btn bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                SF9
+              </button>
+              <button
+                type="button"
+                className='btn bg-blue-500 hover:bg-blue-600 text-white'
+              >
+                SF10
+              </button>
+            </>)}
             <button
               type="button"
               onClick={onClose}
               className="btn bg-gray-300 hover:bg-gray-400 text-black"
-              disabled={loading}
+              readOnly={loading}
             >
               Close
             </button>
-            <button
-              type="submit"
-              className="btn bg-blue-500 hover:bg-blue-600 text-white"
-            >
-              {loading ? (studentToEdit ? 'Updating...' : 'Registering...') : studentToEdit ? 'Update' : 'Register'}
-            </button>
+            {!viewOnly && (
+              <button
+                type="submit"
+                className="btn bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                {loading ? (studentToEdit ? 'Updating...' : 'Registering...') : studentToEdit ? 'Update' : 'Register'}
+              </button>
+            )}
           </div>
         </form>
       </div>
