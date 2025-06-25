@@ -12,6 +12,7 @@ export default function ManageStudents({ permissions }) {
   const buttonRefs = useRef({});
   const [showRegisterStudentModal, setShowRegisterStudentModal] = useState(false);
   const [studentToEdit, setStudentToEdit] = useState(null);
+  const [viewOnly, setViewOnly] = useState(false);
 
   useEffect(() => {
     fetchStudents();
@@ -130,12 +131,24 @@ export default function ManageStudents({ permissions }) {
                             } right-0 w-40 bg-white border rounded shadow-md z-10`}
                             >
                             <button
+                              className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                              onClick={() => {
+                                setStudentToEdit(student);
+                                setShowRegisterStudentModal(true);
+                                setActionStudentId(null);
+                                setViewOnly(true);
+                              }}
+                            >
+                              View Student
+                            </button>
+                            <button
                                 className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                                 onClick={() => {
                                   setStudentToEdit(student);
                                   setShowRegisterStudentModal(true);
                                   setActionStudentId(null);
-                                }}                                
+                                  setViewOnly(false);
+                                }}                                                              
                             >
                                 Edit Student
                             </button>
@@ -157,15 +170,17 @@ export default function ManageStudents({ permissions }) {
       </Section>
 
       {showRegisterStudentModal && (
-          <RegisterStudent
+        <RegisterStudent
           open={showRegisterStudentModal}
           onClose={() => {
             setShowRegisterStudentModal(false);
             setStudentToEdit(null);
+            setViewOnly(false);
           }}
           refreshStudents={fetchStudents}
           studentToEdit={studentToEdit}
-        />      
+          viewOnly={viewOnly}
+        />             
       )}
     </div>
   );
