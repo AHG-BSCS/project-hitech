@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useSystemSettings } from '../context/SystemSettingsContext';
 
 export default function Login() {
   const [form, setForm] = useState({ employeeId: '', password: '' });
@@ -10,6 +11,7 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { settings, loading: settingsLoading } = useSystemSettings();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -51,19 +53,51 @@ export default function Login() {
     if (isAuthenticated) navigate('/dashboard');
   }, []);
 
+  if (settingsLoading) return <div className="flex items-center justify-center h-screen">Loading system settings...</div>;
+
+  // Login card location
+  let justify = 'center';
+  if (settings?.loginCardLocation === 'left') justify = 'start';
+  if (settings?.loginCardLocation === 'right') justify = 'end';
+
+  // Login page background
+  let bgStyle = {};
+  if (settings?.bgType === 'color') {
+    bgStyle.background = settings.bgValue || '#f3f4f6';
+  } else if (settings?.bgType === 'image' && settings.bgBase64) {
+    bgStyle.background = `url(${settings.bgBase64}) center/cover no-repeat`;
+  }
+
   return (
-    <div className="bg-base-200 min-h-screen flex items-center justify-center">
-      <div className="card w-full max-w-sm shadow-2xl bg-base-100">
+    <div className="min-h-screen flex items-center relative" style={bgStyle}>
+      {/* Background blur overlay */}
+      <div className="absolute inset-0 bg-white/30 backdrop-blur-md z-0"></div>
+      <div className={`card w-full max-w-sm shadow-2xl bg-base-100 mx-auto flex-1 flex flex-col justify-${justify} relative z-10`}>
         <form className="card-body" onSubmit={handleSubmit}>
-          <div className="avatar mx-auto">
-            <div className="w-24 rounded-full">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Seal_of_the_Department_of_Education_of_the_Philippines.png" />
+          <div className="w-full flex justify-center items-center my-2">
+            <div className="flex items-center justify-center gap-2 bg-white rounded-full p-2 shadow-sm" style={{maxWidth:'120px'}}>
+              {settings?.logoMode === 'school-deped' ? (
+                <div className="flex items-center justify-center gap-2 w-full">
+                  {settings?.logoBase64 && (
+                    <img src={settings.logoBase64} alt="School Logo" className="w-12 h-12 rounded-full object-contain" />
+                  )}
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Seal_of_the_Department_of_Education_of_the_Philippines.png"
+                    alt="DepEd Logo"
+                    className="w-12 h-12 rounded-full object-contain"
+                  />
+                </div>
+              ) : settings?.logoBase64 ? (
+                <img src={settings.logoBase64} alt="School Logo" className="w-25 h-25 rounded-full object-contain" />
+              ) : (
+                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Seal_of_the_Department_of_Education_of_the_Philippines.png" alt="DepEd Logo" className="w-12 h-12 rounded-full object-contain" />
+              )}
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold text-center">School Portal</h2>
-          <p className="text-sm text-center">Division of San Pablo</p>
-          <p className="text-xs text-center">School ID: 109768</p>
+          <h2 className="text-2xl font-bold text-center">{settings?.titleBar || 'School Portal'}</h2>
+          <p className="text-sm text-center">{settings?.division ? `Division of ${settings.division}` : 'Division'}</p>
+          <p className="text-xs text-center">School ID: {settings?.schoolId || '109768'}</p>
 
           <div className="form-control">
             <label className="label">Employee ID</label>
@@ -95,7 +129,7 @@ export default function Login() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-2 top-2"
               >
-                👁️
+                
               </button>
             </div>
           </div>
