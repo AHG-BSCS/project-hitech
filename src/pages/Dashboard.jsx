@@ -9,6 +9,9 @@ import ManageRoles from '../components/ManageRoles';
 import ManageUsers from '../components/ManageUsers';
 import ManageStudents from '../components/ManageStudents';
 import Home from '../components/Home';
+import PortalSettings from '../components/PortalSettings';
+import { useSystemSettings } from '../context/SystemSettingsContext';
+import { FaHome, FaUserGraduate, FaChalkboardTeacher, FaUsers, FaUserShield, FaCogs, FaCog, FaSchool } from 'react-icons/fa';
 
 // The main Dashboard component
 export default function Dashboard() {
@@ -19,6 +22,8 @@ export default function Dashboard() {
   const [selectValue, setSelectValue] = useState('');
   const [permissions, setPermissions] = useState(0);
   const [searchSidebar, setSearchSidebar] = useState('');
+  const [userRole, setUserRole] = useState('');
+  const { settings } = useSystemSettings();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -32,10 +37,10 @@ export default function Dashboard() {
           setEmployeeId(userData.employeeId);
           localStorage.setItem('employeeId', userData.employeeId);
           setPermissions(userData.permissions || 0);
+          setUserRole(userData.role || '');
         }
       }
     });
-
     return () => unsubscribe();
   }, [navigate]);
 
@@ -64,19 +69,37 @@ export default function Dashboard() {
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_USERS) ? [['users', 'Users']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_ROLES) ? [['roles', 'Roles']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS) ? [['settings', 'Settings']] : []),
+    ...(userRole === 'superadmin' ? [['portal_settings', 'Portal Settings']] : []),
   ];
+
+  // Map menu keys to icons
+  const menuIcons = {
+    home: <FaHome className="w-7 h-7 mr-2" />,
+    student_info: <FaUserGraduate className="w-7 h-7 mr-2" />,
+    grade: <FaChalkboardTeacher className="w-7 h-7 mr-2" />,
+    classes: <FaChalkboardTeacher className="w-7 h-7 mr-2" />,
+    users: <FaUsers className="w-7 h-7 mr-2" />,
+    roles: <FaUserShield className="w-7 h-7 mr-2" />,
+    settings: <FaCogs className="w-7 h-7 mr-2" />,
+    portal_settings: <FaSchool className="w-7 h-7 mr-2" />,
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 h-full bg-blue-900 text-white w-64 transition-transform duration-300 ease-in-out z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex-shrink-0`}>
+      <aside className={`fixed top-0 left-0 h-full bg-blue-900 text-white w-64 transition-transform duration-300 ease-in-out z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex-shrink-0`} style={{ background: settings?.colorPalette || '#2563eb' }}>
         <div className="flex flex-col h-full p-5">
           {/* Profile */}
           <div className="bg-white text-black text-center rounded-lg py-5 mb-8 flex-shrink-0">
-            <img src="/placeholder.svg" alt="Profile" className="w-10 h-10 mx-auto mb-3" />
+            {settings?.logoBase64 ? (
+              <img src={settings.logoBase64} alt="Profile" className="w-10 h-10 mx-auto mb-3" />
+            ) : (
+              <img src="/placeholder.svg" alt="Profile" className="w-10 h-10 mx-auto mb-3" />
+            )}
             <p className="text-sm">
               Welcome, <span className="font-bold">{employeeId || 'Loading...'}</span>
             </p>
+            {settings?.schoolId && <p className="text-xs text-gray-500">School ID: {settings.schoolId}</p>}
           </div>
 
           <div className="flex-1 flex flex-col bg-white text-black rounded-lg p-4 mb-4 min-h-0">
@@ -104,13 +127,12 @@ export default function Dashboard() {
                     }}
                     className={`w-full flex items-center text-black text-left py-2 px-2 rounded-lg hover:bg-blue-100 ${section === key ? 'bg-blue-100 font-bold' : ''}`}
                   >
-                    <img src="/placeholder.svg" alt="" className="w-7 h-7 mr-2" />
+                    {menuIcons[key] || <FaCog className="w-7 h-7 mr-2" />} {/* Use icon or fallback */}
                     {label}
                   </button>
                 ))}
             </div>
           </div>
-          
           <button className="btn btn-error text-white w-full flex-shrink-0" onClick={handleLogout}>
             LOGOUT
           </button>
@@ -128,7 +150,7 @@ export default function Dashboard() {
               >
                 ☰
               </button>
-            <h1 className="text-2xl font-bold text-black">Welcome to System</h1>
+            <h1 className="text-2xl font-bold text-black">{settings?.titleBar || 'Welcome to System'}</h1>
           </div>
           <div className="flex items-center">
             <span className="text-black text-sm mr-2 hidden sm:inline">{employeeId || 'User'}</span>
@@ -156,6 +178,7 @@ export default function Dashboard() {
           <Route path="classes" element={<ManageClasses permissions={permissions} />} />
           <Route path="grade" element={<GenericSection title="Manage Grades" />} />
           <Route path="settings" element={<GenericSection title="Manage Settings" />} />
+          <Route path="portal_settings" element={<PortalSettings />} />
           <Route path="*" element={<GenericSection title="Not Found" />} />
         </Routes>
       </main>
