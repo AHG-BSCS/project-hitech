@@ -1,16 +1,13 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
-import { Navigate } from 'react-router-dom';
 import ManageStudents from './components/ManageStudents';
 
-const PrivateRoute = ({ children }) => {
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  return isAuthenticated ? children : <Navigate to="/" />;
-};
-
 function App() {
+  // Helper to check authentication
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+
   return (
     <Router>
       <Routes>
@@ -24,6 +21,13 @@ function App() {
           }
         />
         <Route path="/student_information" element={<ManageStudents />} />
+        {/* Catch-all route for invalid paths */}
+        <Route
+          path="*"
+          element={
+            isAuthenticated ? <Navigate to="/home" replace /> : <Navigate to="/" replace />
+          }
+        />
       </Routes>
     </Router>
   );
