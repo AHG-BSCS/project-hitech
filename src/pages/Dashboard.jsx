@@ -81,7 +81,6 @@ export default function Dashboard() {
         return <GenericSection title="Manage Grades" />;
       case 'student_info':
         return <ManageStudents permissions={permissions} />;
-      case 'dashboard':
       default:
         return (
           <>

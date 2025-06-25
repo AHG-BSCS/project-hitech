@@ -94,7 +94,8 @@ export default function RegisterRole({ open, onClose, refreshRoles }) {
               min="0"
               className="input input-bordered w-full bg-white border border-gray-300 text-black"
               value={permissionInput}
-              onChange={() => (handlePermissionInput, setMessage(''))}
+              onChange={(e) => (handlePermissionInput(e), setMessage(''))}
+              required
             />
           </div>
 
