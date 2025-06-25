@@ -113,6 +113,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
               value={sex}
               onChange={(e) => (setSex(e.target.value), setMessage(''))}
               required
+              disabled={!!studentToEdit} // Disable if editing
             >
               <option value="" disabled>Select Sex</option>
               <option value="Male">Male</option>
