@@ -1,30 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 import ManageClasses from '../components/ManageClasses';
 import ManageRoles from '../components/ManageRoles';
 import ManageUsers from '../components/ManageUsers';
 import ManageStudents from '../components/ManageStudents';
-
-// A placeholder for a generic section component.
-function GenericSection({ title }) {
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-300">
-      <h2 className="text-xl font-bold text-black mb-4">{title}</h2>
-      <div className="text-center text-gray-500 h-48 flex items-center justify-center">
-        Content for {title} goes here.
-      </div>
-    </div>
-  );
-}
+import Home from '../components/Home';
 
 // The main Dashboard component
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [section, setSection] = useState('dashboard');
+  const [section] = useState('dashboard');
   const [employeeId, setEmployeeId] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectValue, setSelectValue] = useState('');
@@ -67,45 +56,8 @@ export default function Dashboard() {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-  const renderContent = () => {
-    switch (section) {
-      case 'roles':
-        return <ManageRoles permissions={permissions} />;
-      case 'settings':
-        return <GenericSection title="Settings" />;
-      case 'users':
-        return <ManageUsers permissions={permissions} />;
-      case 'classes':
-        return <ManageClasses />;
-      case 'grade':
-        return <GenericSection title="Manage Grades" />;
-      case 'student_info':
-        return <ManageStudents permissions={permissions} />;
-      default:
-        return (
-          <>
-            <Section title="Quick Overview">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {['Students', 'Records', 'Classes', 'Accounts'].map((title) => (
-                  <div key={title} className="stat bg-white border border-gray-300 shadow-md">
-                    <div className="stat-title text-black">{title}</div>
-                    <div className="stat-value text-black">0000</div>
-                  </div>
-                ))}
-              </div>
-            </Section>
-            <Section title="Student Population">
-              <div className="text-center text-gray-500 h-48 flex items-center justify-center">
-                Chart
-              </div>
-            </Section>
-          </>
-        );
-    }
-  };
-
   const menuItems = [
-    ['dashboard', 'Dashboard'],
+    ['home', 'Home'],
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS) ? [['student_info', 'Student Information']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) ? [['grade', 'Grade']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) ? [['classes', 'Classes']] : []),
@@ -146,7 +98,8 @@ export default function Dashboard() {
                   <button
                     key={key}
                     onClick={() => {
-                      setSection(key);
+                      const path = key === 'home' ? '/home' : '/home/' + key;
+                      navigate(path);
                       setSidebarOpen(false);
                     }}
                     className={`w-full flex items-center text-black text-left py-2 px-2 rounded-lg hover:bg-blue-100 ${section === key ? 'bg-blue-100 font-bold' : ''}`}
@@ -195,8 +148,17 @@ export default function Dashboard() {
 
         {/* Section Content */}
         <main className="p-5 flex-1 overflow-y-auto">
-          {renderContent()}
-        </main>
+        <Routes>
+          <Route index element={<Home />} />
+          <Route path="student_info" element={<ManageStudents permissions={permissions} />} />
+          <Route path="users" element={<ManageUsers permissions={permissions} />} />
+          <Route path="roles" element={<ManageRoles permissions={permissions} />} />
+          <Route path="classes" element={<ManageClasses permissions={permissions} />} />
+          <Route path="grade" element={<GenericSection title="Manage Grades" />} />
+          <Route path="settings" element={<GenericSection title="Manage Settings" />} />
+          <Route path="*" element={<GenericSection title="Not Found" />} />
+        </Routes>
+      </main>
       </div>
     </div>
   );
@@ -211,5 +173,16 @@ function Section({ title, children }) {
         {children}
       </div>
     </section>
+  );
+}
+
+function GenericSection({ title }) {
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-300">
+      <h2 className="text-xl font-bold text-black mb-4">{title}</h2>
+      <div className="text-center text-gray-500 h-48 flex items-center justify-center">
+        Content for {title} goes here.
+      </div>
+    </div>
   );
 }

@@ -3,6 +3,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Navigate } from 'react-router-dom';
+import ManageStudents from './components/ManageStudents';
 
 const PrivateRoute = ({ children }) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
@@ -15,13 +16,14 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route
-          path="/dashboard"
+          path="/home/*"
           element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
           }
         />
+        <Route path="/student_information" element={<ManageStudents />} />
       </Routes>
     </Router>
   );

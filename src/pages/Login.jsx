@@ -37,7 +37,7 @@ export default function Login() {
 
       localStorage.setItem('employeeId', form.employeeId);
       localStorage.setItem('isAuthenticated', 'true');
-      navigate('/dashboard');
+      navigate('/home');
     } catch (error) {
       console.error(error);
       setErrorMsg('Invalid credentials.');
