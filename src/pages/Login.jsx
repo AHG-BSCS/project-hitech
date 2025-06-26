@@ -1,9 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { useSystemSettings } from '../context/SystemSettingsContext';
+
+// Cache keys (move above component)
+const BG_IMAGE_KEY = 'cachedBgImage';
+const BG_SETTINGS_KEY = 'cachedBgSettings';
+const LOGO_KEY = 'cachedLogoBase64';
+const LOGO_MODE_KEY = 'cachedLogoMode';
 
 export default function Login() {
   const [form, setForm] = useState({ employeeId: '', password: '' });
@@ -12,8 +18,17 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { settings, loading: settingsLoading } = useSystemSettings();
-  const [bgImage, setBgImage] = useState(null);
-  const [bgSettings, setBgSettings] = useState(null);
+  const [bgImage, setBgImage] = useState(() => {
+    const cached = localStorage.getItem(BG_IMAGE_KEY);
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [bgSettings, setBgSettings] = useState(() => {
+    const cached = localStorage.getItem(BG_SETTINGS_KEY);
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [logoLoaded, setLogoLoaded] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const fetchedOnce = useRef(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -55,64 +70,57 @@ export default function Login() {
     if (isAuthenticated) navigate('/dashboard');
   }, []);
 
+  // Fetch background and settings from Firestore, update cache if changed
   useEffect(() => {
-    // Fetch bgImage from Firestore (system/bgImage)
-    const fetchBgImage = async () => {
+    if (fetchedOnce.current) return;
+    setFetching(true);
+    const fetchBg = async () => {
       try {
-        const bgImageDoc = await getDoc(doc(db, 'system', 'bgImage'));
+        const [bgImageDoc, bgSettingsDoc] = await Promise.all([
+          getDoc(doc(db, 'system', 'bgImage')),
+          getDoc(doc(db, 'system', 'bgSettings')),
+        ]);
         if (bgImageDoc.exists()) {
-          setBgImage(bgImageDoc.data().bgBase64 || null);
+          const bgBase64 = bgImageDoc.data().bgBase64 || null;
+          setBgImage(bgBase64);
+          localStorage.setItem(BG_IMAGE_KEY, JSON.stringify(bgBase64));
         }
-      } catch (err) {
-        console.error('Failed to fetch bgImage:', err);
-      }
-    };
-    fetchBgImage();
-  }, []);
-
-  useEffect(() => {
-    // Fetch bgSettings from Firestore (system/bgSettings)
-    const fetchBgSettings = async () => {
-      try {
-        const bgSettingsDoc = await getDoc(doc(db, 'system', 'bgSettings'));
         if (bgSettingsDoc.exists()) {
-          setBgSettings(bgSettingsDoc.data());
+          const data = bgSettingsDoc.data();
+          setBgSettings(data);
+          localStorage.setItem(BG_SETTINGS_KEY, JSON.stringify(data));
         }
       } catch (err) {
-        console.error('Failed to fetch bgSettings:', err);
+        console.error('Failed to fetch bgImage or bgSettings:', err);
+      } finally {
+        setFetching(false);
+        fetchedOnce.current = true;
       }
     };
-    fetchBgSettings();
+    fetchBg();
   }, []);
 
-  if (settingsLoading) {
-    // Use the same background logic as the main return
-    let bgStyle = {};
-    if (bgSettings) {
-      if (bgSettings.bgType === 'color') {
-        bgStyle.background = bgSettings.bgValue || '#f3f4f6';
-      } else if (bgSettings.bgType === 'image' && bgImage) {
-        bgStyle.background = `url(${bgImage}) center/cover no-repeat`;
+  // Cache logo if available
+  useEffect(() => {
+    if (settings?.logoBase64) {
+      const cachedLogo = localStorage.getItem(LOGO_KEY);
+      const cachedLogoMode = localStorage.getItem(LOGO_MODE_KEY);
+      if (cachedLogo !== settings.logoBase64 || cachedLogoMode !== settings.logoMode) {
+        localStorage.setItem(LOGO_KEY, settings.logoBase64);
+        localStorage.setItem(LOGO_MODE_KEY, settings.logoMode);
       }
-    } else if (settings?.bgType === 'color') {
-      bgStyle.background = settings.bgValue || '#f3f4f6';
-    } else if (settings?.bgType === 'image' && bgImage) {
-      bgStyle.background = `url(${bgImage}) center/cover no-repeat`;
+      setLogoLoaded(true);
+    } else if (settings) {
+      setLogoLoaded(true);
     }
-    // Show only the blurred overlay, no card or spinner
-    return (
-      <div className="min-h-screen flex items-center relative" style={bgStyle}>
-        <div className="absolute inset-0 bg-white/30 backdrop-blur-md z-0 transition-opacity duration-500"></div>
-      </div>
-    );
-  }
+  }, [settings]);
 
   // Login card location
   let justify = 'center';
   if (settings?.loginCardLocation === 'left') justify = 'start';
   if (settings?.loginCardLocation === 'right') justify = 'end';
 
-  // Login page background
+  // Login page background (use cached, fallback to default)
   let bgStyle = {};
   if (bgSettings) {
     if (bgSettings.bgType === 'color') {
@@ -124,6 +132,8 @@ export default function Login() {
     bgStyle.background = settings.bgValue || '#f3f4f6';
   } else if (settings?.bgType === 'image' && bgImage) {
     bgStyle.background = `url(${bgImage}) center/cover no-repeat`;
+  } else {
+    bgStyle.background = '#f3f4f6'; // fallback
   }
 
   return (
