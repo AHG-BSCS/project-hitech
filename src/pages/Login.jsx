@@ -6,6 +6,7 @@ import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firesto
 import { useSystemSettings } from '../context/SystemSettingsContext';
 import VerifyAccount from '../modals/VerifyAccount';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import depedLogo from '../img/logo_dpd.png';
 
 // Cache keys (move above component)
 const BG_IMAGE_KEY = 'cachedBgImage';
@@ -164,7 +165,7 @@ export default function Login() {
                     <img src={settings.logoBase64} alt="School Logo" className="w-12 h-12 rounded-full object-contain" />
                   )}
                   <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Seal_of_the_Department_of_Education_of_the_Philippines.png"
+                    src={depedLogo}
                     alt="DepEd Logo"
                     className="w-12 h-12 rounded-full object-contain"
                   />
@@ -172,7 +173,7 @@ export default function Login() {
               ) : settings?.logoBase64 ? (
                 <img src={settings.logoBase64} alt="School Logo" className="w-25 h-25 rounded-full object-contain" />
               ) : (
-                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Seal_of_the_Department_of_Education_of_the_Philippines.png" alt="DepEd Logo" className="w-12 h-12 rounded-full object-contain" />
+                <img src={depedLogo} alt="DepEd Logo" className="w-12 h-12 rounded-full object-contain" />
               )}
             </div>
           </div>
