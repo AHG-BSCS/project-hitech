@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
-import PERMISSIONS, { hasPermission } from '../modules/Permissions';
+import PERMISSIONS, { hasPermission, ALL_PERMISSIONS_VALUE } from '../modules/Permissions';
 import RegisterRole from '../modals/RegisterRole';
 
 export default function ManageRoles({ permissions }) {
@@ -24,10 +24,10 @@ export default function ManageRoles({ permissions }) {
   };
 
   const getPermissionNames = (permissionInt) => {
-    if (permissionInt === 0) return 'All';
+    if (permissionInt === 0) return 'All Permissions';
     return Object.entries(PERMISSIONS)
       .filter(([_, bit]) => (permissionInt & bit) !== 0)
-      .map(([name]) => name)
+      .map(([name]) => name.replace(/_/g, ' '))
       .join(', ');
   };
 

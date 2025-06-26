@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { doc, setDoc, collection } from 'firebase/firestore';
-import PERMISSIONS from '../modules/Permissions';
+import { doc, setDoc, collection, getDocs, writeBatch, query, where } from 'firebase/firestore';
+import PERMISSIONS, { ALL_PERMISSIONS_VALUE } from '../modules/Permissions';
 
 export default function RegisterRole({ open, onClose, refreshRoles, editRole }) {
   const [roleName, setRoleName] = useState('');
@@ -27,10 +27,33 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
 
   const togglePermission = (bit) => {
     setPermissions((prev) => {
-      const updated = prev ^ bit;
+      let updated;
+      if (prev === 0) {
+        // If currently all permissions (0), start with all individual bits and remove the clicked one
+        updated = ALL_PERMISSIONS_VALUE ^ bit;
+      } else {
+        // Normal toggle
+        updated = prev ^ bit;
+        // If we now have all permissions individually, set to 0
+        if (updated === ALL_PERMISSIONS_VALUE) {
+          updated = 0;
+        }
+      }
       setPermissionInput(updated.toString());
       return updated;
     });
+  };
+
+  const toggleSelectAll = () => {
+    if (permissions === 0) {
+      // If all permissions selected (0), deselect all by setting to individual bits
+      setPermissions(ALL_PERMISSIONS_VALUE);
+      setPermissionInput(ALL_PERMISSIONS_VALUE.toString());
+    } else {
+      // Select all permissions (set to 0)
+      setPermissions(0);
+      setPermissionInput('0');
+    }
   };
 
   const handlePermissionInput = (e) => {
@@ -39,12 +62,7 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
 
     const intVal = parseInt(val, 10);
     if (!isNaN(intVal)) {
-      if (intVal === 0) {
-        const all = Object.values(PERMISSIONS).reduce((a, b) => a | b, 0);
-        setPermissions(all);
-      } else {
-        setPermissions(intVal);
-      }
+      setPermissions(intVal);
     }
   };
 
@@ -61,13 +79,29 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
 
     try {
       let roleRef;
+      const batch = writeBatch(db);
+      
       if (editRole && editRole.id) {
         // Update existing role
         roleRef = doc(db, 'roles', editRole.id);
-        await setDoc(roleRef, {
+        batch.set(roleRef, {
           name: roleName,
           permission: permissions,
         }, { merge: true });
+
+        // Update all users with this role to have the new permissions
+        const usersQuery = query(collection(db, 'users'), where('role', '==', editRole.name));
+        const usersSnapshot = await getDocs(usersQuery);
+        
+        usersSnapshot.docs.forEach((userDoc) => {
+          const userRef = doc(db, 'users', userDoc.id);
+          batch.set(userRef, {
+            permissions: permissions
+          }, { merge: true });
+        });
+        
+        await batch.commit();
+        setMessage(`✅ Role updated successfully! Updated ${usersSnapshot.docs.length} users with new permissions.`);
       } else {
         // Add new role
         roleRef = doc(collection(db, 'roles'));
@@ -75,17 +109,21 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
           name: roleName,
           permission: permissions,
         });
+        setMessage('✅ Role saved successfully!');
       }
 
       setRoleName('');
       setPermissionInput('0');
       setPermissions(0);
-      setMessage('✅ Role saved successfully!');
 
       if (typeof refreshRoles === 'function') {
         refreshRoles();
       }
-      onClose();
+      
+      // Close modal after a short delay to show the success message
+      setTimeout(() => {
+        onClose();
+      }, 1500);
     } catch (err) {
       console.error('Error saving role:', err);
       setMessage(`❌ ${err.message}`);
@@ -125,6 +163,18 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
 
           <div>
             <p className="font-semibold text-black mb-2">Permissions:</p>
+            
+            {/* Select All checkbox */}
+            <label className="flex items-center text-black mb-3 font-medium">
+              <input
+                type="checkbox"
+                checked={permissions === 0}
+                onChange={toggleSelectAll}
+                className="mr-2"
+              />
+              Select All Permissions
+            </label>
+            
             <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
               {Object.entries(PERMISSIONS).map(([name, bit]) => (
                 <label key={name} className="flex items-center text-black">
@@ -137,6 +187,10 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
                   {name.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
                 </label>
               ))}
+            </div>
+            <div className="mt-2 text-xs text-gray-600">
+              <p>Total permissions value: {permissions} {permissions === 0 && '(All Permissions)'}</p>
+              <p>Individual permissions combined: {ALL_PERMISSIONS_VALUE}</p>
             </div>
           </div>
 

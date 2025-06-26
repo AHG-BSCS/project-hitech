@@ -200,7 +200,7 @@ export default function ManageUsers({ permissions }) {
                   .map(user => (
                     <tr
                       key={user.id}
-                      className={`$${
+                      className={`${
                         actionUserId === user.id
                           ? 'bg-blue-200 text-black'
                           : 'hover:bg-blue-100 hover:text-black'
