@@ -7,12 +7,13 @@ import { getFirestore } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyC-X14Ej9I4e7JRKKPhMGP39HIDa3R2RUs",
-  authDomain: "hitech-81b48.firebaseapp.com",
-  projectId: "hitech-81b48",
-  storageBucket: "hitech-81b48.firebasestorage.app",
-  messagingSenderId: "92255126097",
-  appId: "1:92255126097:web:61e2cc5d5eba0ff9c6ee70"
+  apiKey: "AIzaSyCqbS5swXqAfB8rd8R-M3ZcZpgk5Y3U1EE",
+  authDomain: "project-hitech-35c60.firebaseapp.com",
+  projectId: "project-hitech-35c60",
+  storageBucket: "project-hitech-35c60.firebasestorage.app",
+  messagingSenderId: "293615864250",
+  appId: "1:293615864250:web:c7185f02c3cc00734c3583",
+  measurementId: "G-MNM8NTK0HP"
 };
 
 // Initialize Firebase

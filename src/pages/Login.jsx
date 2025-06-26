@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
+import { updateDoc } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { useSystemSettings } from '../context/SystemSettingsContext';
@@ -65,8 +66,17 @@ export default function Login() {
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists() && userSnap.data().defaultPassword === true) {
-        await sendPasswordResetEmail(auth, email);
-        setShowVerifyModal(true);
+        if (form.password !== 'hitech123') {
+          await updateDoc(doc(db, 'users', querySnapshot.docs[0].id), {
+            defaultPassword: false,
+          });
+          localStorage.setItem('employeeId', form.employeeId);
+          localStorage.setItem('isAuthenticated', 'true');
+          navigate('/home');
+        } else {
+          await sendPasswordResetEmail(auth, email);
+          setShowVerifyModal(true);
+        }
       } else {
         localStorage.setItem('employeeId', form.employeeId);
         localStorage.setItem('isAuthenticated', 'true');
