@@ -176,7 +176,7 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
             <label className="flex items-center text-sm font-medium text-gray-800 mb-1">
               Permission Integer
               <Tooltip text={`Permission System:
-• 0 = All Permissions (Admin)
+• 0 = All Permissions (SuperAdmin)
 • Each permission has a bit value
 • Add values to combine permissions
 
