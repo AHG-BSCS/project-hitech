@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, db } from '../firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { db } from '../firebase';
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { useSystemSettings } from '../context/SystemSettingsContext';
+import VerifyAccount from '../modals/VerifyAccount';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 // Cache keys (move above component)
 const BG_IMAGE_KEY = 'cachedBgImage';
@@ -29,6 +31,7 @@ export default function Login() {
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [fetching, setFetching] = useState(false);
   const fetchedOnce = useRef(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -49,14 +52,25 @@ export default function Login() {
         return;
       }
 
-      const userDoc = querySnapshot.docs[0].data();
-      const email = userDoc.email;
+      const userDoc = querySnapshot.docs[0];
+      const userData = userDoc.data();
+      const email = userData.email;
+      const auth = getAuth();
 
       await signInWithEmailAndPassword(auth, email, form.password);
 
-      localStorage.setItem('employeeId', form.employeeId);
-      localStorage.setItem('isAuthenticated', 'true');
-      navigate('/home');
+      const loggedInUser = auth.currentUser;
+      const userRef = doc(db, 'users', loggedInUser.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists() && userSnap.data().defaultPassword === true) {
+        await sendPasswordResetEmail(auth, email);
+        setShowVerifyModal(true);
+      } else {
+        localStorage.setItem('employeeId', form.employeeId);
+        localStorage.setItem('isAuthenticated', 'true');
+        navigate('/home');
+      }
     } catch (error) {
       console.error(error);
       setErrorMsg('Invalid credentials.');
@@ -140,7 +154,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center relative" style={bgStyle}>
       {/* Background blur overlay */}
       <div className="absolute inset-0 bg-white/30 backdrop-blur-md z-0"></div>
-      <div className={`card w-full max-w-sm shadow-2xl bg-base-100 mx-auto flex-1 flex flex-col justify-${justify} relative z-10`}>
+      <div className={`card w-full bg-white max-w-sm shadow-2xl bg-base-100 mx-auto flex-1 flex flex-col justify-${justify} relative z-10`}>
         <form className="card-body" onSubmit={handleSubmit}>
           <div className="w-full flex justify-center items-center my-2">
             <div className="flex items-center justify-center gap-2 bg-white rounded-full p-2 shadow-sm" style={{maxWidth:'120px'}}>
@@ -163,16 +177,16 @@ export default function Login() {
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold text-center">{settings?.titleBar || 'School Portal'}</h2>
-          <p className="text-sm text-center">{settings?.division ? `Division of ${settings.division}` : 'Division'}</p>
-          <p className="text-xs text-center">School ID: {settings?.schoolId || '109768'}</p>
+          <h2 className="text-2xl text-black font-bold text-center">{settings?.titleBar || 'School Portal'}</h2>
+          <p className="text-sm text-black text-center">{settings?.division ? `Division of ${settings.division}` : 'Division'}</p>
+          <p className="text-xs text-black text-center">School ID: {settings?.schoolId || '109768'}</p>
 
           <div className="form-control">
-            <label className="label">Employee ID</label>
+            <label className="label text-black">Employee ID</label>
             <input
               type="text"
               name="employeeId"
-              className="input input-bordered"
+              className="input input-bordered bg-white text-black border-gray-300 w-full"
               placeholder="Enter your ID"
               value={form.employeeId}
               onChange={handleChange}
@@ -181,12 +195,12 @@ export default function Login() {
           </div>
 
           <div className="form-control">
-            <label className="label">Password</label>
+            <label className="label text-black">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
-                className="input input-bordered w-full pr-10"
+                className="input input-bordered bg-white text-black border-gray-300 w-full pr-10"
                 placeholder="Enter your password"
                 value={form.password}
                 onChange={handleChange}
@@ -195,22 +209,27 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-2"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
               >
-                
+                {showPassword ? (
+                  <EyeSlashIcon className="w-5 h-5" />
+                ) : (
+                  <EyeIcon className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
 
           {errorMsg && <div className="text-red-500 text-center">{errorMsg}</div>}
 
-          <div className="form-control mt-4">
-            <button type="submit" className="btn btn-primary" disabled={loading}>
+          <div className="form-control flex justify-end mt-4">
+            <button type="submit" className="btn btn-primary">
               {loading ? <span className="loading loading-spinner"></span> : 'Login'}
             </button>
           </div>
         </form>
       </div>
+      <VerifyAccount show={showVerifyModal} onClose={() => setShowVerifyModal(false)} />
     </div>
   );
 }

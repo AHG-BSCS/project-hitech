@@ -4,6 +4,7 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signOut as secondarySignOut,
+  sendEmailVerification,
 } from 'firebase/auth';
 import {
   collection,
@@ -14,7 +15,7 @@ import {
 
 export default function RegisterUser({ open, onClose, refreshUsers }) {
   const [form, setForm] = useState({
-    name: '', // Added name field
+    name: '',
     email: '',
     employeeId: '',
     role: '',
@@ -68,18 +69,11 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
       employeeId: form.employeeId.trim(),
       role: form.role,
     };
-    let password = '';
-    if (generatePassword) {
-      // Generate a random 10-character password
-      password = Math.random().toString(36).slice(-10);
-    } else {
-      password = customPassword;
-    }
+    const password = 'hitech123';
 
     try {
       const roleObj = roles.find(r => r.name === role);
       if (!roleObj) throw new Error('Selected role is invalid');
-      if (!password) throw new Error('Password cannot be empty');
 
       const secondaryAuth = getAuth(temp);
       const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
@@ -87,22 +81,19 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
 
       await setDoc(doc(db, 'users', newUser.uid), {
         uid: newUser.uid,
-        name, // Save name to Firestore
+        name,
         email,
         employeeId,
         role: roleObj.name,
         permissions: roleObj.permission,
         active: true,
-        requirePasswordChange,
+        defaultPassword: true,
       });
 
       await secondarySignOut(secondaryAuth);
 
       setForm({ name: '', email: '', employeeId: '', role: '' });
-      setCustomPassword('');
-      setGeneratePassword(true);
-      setRequirePasswordChange(true);
-      setMessage(`✅ User registered successfully!${generatePassword ? ` Generated password: ${password}` : ''}`);
+      setMessage(`✅ User added successfully!`);
 
       if (typeof refreshUsers === 'function') {
         refreshUsers();
@@ -119,7 +110,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
     <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
       {/* Prevent outside click from closing the modal */}
       <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold text-black mb-4 text-center">Register New User</h2>
+        <h2 className="text-lg font-bold text-black mb-4 text-center">Add New User</h2>
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-800 mb-1">Full Name</label>
@@ -162,7 +153,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
             <label className="block text-sm font-medium text-gray-800 mb-1">Select Role</label>
             <select
               name="role"
-              className="select select-bordered w-full bg-white text-black"
+              className="select select-bordered border-gray-300 w-full bg-white text-black"
               value={form.role}
               onChange={handleChange}
               required
@@ -176,47 +167,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
             </select>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="generatePassword"
-              checked={generatePassword}
-              onChange={() => setGeneratePassword(!generatePassword)}
-              className="checkbox"
-            />
-            <label htmlFor="generatePassword" className="text-sm">Generate random password</label>
-          </div>
-
-          {!generatePassword && (
-            <div>
-              <label className="block text-sm font-medium text-gray-800 mb-1">Set Password</label>
-              <input
-                name="customPassword"
-                type="password"
-                placeholder="Enter password"
-                className="input input-bordered w-full bg-white border border-gray-300 text-black"
-                value={customPassword}
-                onChange={e => setCustomPassword(e.target.value)}
-                minLength={6}
-                required={!generatePassword}
-              />
-            </div>
-          )}
-
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="requirePasswordChange"
-              checked={requirePasswordChange}
-              onChange={() => setRequirePasswordChange(!requirePasswordChange)}
-              className="checkbox"
-            />
-            <label htmlFor="requirePasswordChange" className="text-sm">Require user to change password on first sign in</label>
-          </div>
-
-          <p className="text-xs text-gray-500">
-            {generatePassword ? 'A random password will be generated.' : 'Password must be at least 6 characters.'}
-          </p>
+          <p className="text-xs text-gray-500">Default password is <code>'hitech123'</code></p>
 
           {message && (
             <p
@@ -242,7 +193,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
               type="submit"
               className="btn bg-blue-500 hover:bg-blue-600 text-white"
             >
-              {loading ? 'Registering...' : 'Register'}
+              {loading ? 'Adding...' : 'Add'}
             </button>
           </div>
         </form>
