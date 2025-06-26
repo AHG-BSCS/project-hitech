@@ -264,7 +264,6 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
                   <input
                     type="checkbox"
                     checked={permissions === 0 ? true : (permissions & bit) === bit}
-                    disabled={permissions === null}
                     onChange={() => (togglePermission(bit), setMessage(''))}
                     className="mr-2"
                   />
