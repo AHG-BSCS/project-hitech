@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import RegisterClassModal from '../modals/RegisterClass';
+import RegisterStudent from '../modals/RegisterStudent';
+import AddStudentToClassModal from '../modals/AddStudentToClassModal';
 
 export default function ManageClasses() {
   const [classes, setClasses] = useState([]);
@@ -12,12 +14,22 @@ export default function ManageClasses() {
   const [actionClassId, setActionClassId] = useState(null);
   const [dropUp, setDropUp] = useState(false);
   const [users, setUsers] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [showViewStudentsModal, setShowViewStudentsModal] = useState(false);
+  const [studentsInClass, setStudentsInClass] = useState([]);
+  const [selectedStudentsToRemove, setSelectedStudentsToRemove] = useState([]);
   const buttonRefs = useRef({});
 
   useEffect(() => {
     const fetchClasses = async () => {
       const snapshot = await getDocs(collection(db, 'classes'));
-      setClasses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setClasses(snapshot.docs.map(doc => {
+        const data = doc.data();
+        return { id: doc.id, ...data, status: data.status || 'active' };
+      }));
     };
     fetchClasses();
   }, [refresh]);
@@ -28,6 +40,14 @@ export default function ManageClasses() {
       setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
     fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      const snapshot = await getDocs(collection(db, 'students'));
+      setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    };
+    fetchStudents();
   }, []);
 
   const handleDelete = async (id) => {
@@ -42,6 +62,15 @@ export default function ManageClasses() {
     setShowModal(true);
   };
 
+  const handleViewStudents = (cls) => {
+    // Use the students array from the class document to filter
+    const studentIds = Array.isArray(cls.students) ? cls.students : [];
+    const filtered = students.filter(s => studentIds.includes(s.id));
+    setStudentsInClass(filtered);
+    setSelectedClass(cls);
+    setShowViewStudentsModal(true);
+  };
+
   const toggleDropdown = (id) => {
     if (actionClassId === id) {
       setActionClassId(null);
@@ -54,6 +83,25 @@ export default function ManageClasses() {
       setDropUp(spaceBelow < 120);
     }
     setActionClassId(id);
+  };
+
+  const handleRemoveSelectedStudents = async () => {
+    if (!selectedClass || selectedStudentsToRemove.length === 0) return;
+    const classRef = doc(db, 'classes', selectedClass.id);
+    const updatedStudentIds = (Array.isArray(selectedClass.students) ? selectedClass.students : []).filter(
+      id => !selectedStudentsToRemove.includes(id)
+    );
+    await updateDoc(classRef, { students: updatedStudentIds });
+    setShowViewStudentsModal(false);
+    setSelectedStudentsToRemove([]);
+    setRefresh(r => !r);
+  };
+
+  const handleToggleStatus = async (cls) => {
+    const classRef = doc(db, 'classes', cls.id);
+    const newStatus = cls.status === 'archived' ? 'active' : 'archived';
+    await updateDoc(classRef, { status: newStatus });
+    setRefresh(r => !r);
   };
 
   return (
@@ -84,24 +132,33 @@ export default function ManageClasses() {
             <table className="table w-full text-sm text-left text-gray-700">
               <thead className="bg-gray-100 text-black sticky top-0 z-10">
                 <tr>
-                  <th>Grade Level</th>
                   <th>Section Name</th>
+                  <th>Grade Level</th>
                   <th>Adviser</th>
+                  <th>School Year</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {classes
+                  .filter(cls => cls.status !== 'archived')
                   .filter(cls =>
                     cls.gradeLevel?.toLowerCase().includes(searchClass.toLowerCase()) ||
                     cls.sectionName?.toLowerCase().includes(searchClass.toLowerCase()) ||
                     cls.adviser?.toLowerCase().includes(searchClass.toLowerCase())
                   )
                   .map(cls => (
-                    <tr key={cls.id} className={`$ {actionClassId === cls.id ? 'bg-blue-200 text-black' : 'hover:bg-blue-100 hover:text-black'}`}>
-                      <td>{cls.gradeLevel}</td>
+                    <tr key={cls.id} className={`${actionClassId === cls.id ? 'bg-blue-200 text-black' : 'hover:bg-blue-100 hover:text-black'}`}>
                       <td>{cls.sectionName}</td>
+                      <td>{cls.gradeLevel}</td>
                       <td>{cls.adviser}</td>
+                      <td>{cls.schoolYear || '-'}</td>
+                      <td>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${cls.status === 'archived' ? 'bg-gray-400 text-white' : 'bg-green-500 text-white'}`}>
+                          {cls.status === 'archived' ? 'Archived' : 'Active'}
+                        </span>
+                      </td>
                       <td className="relative">
                         <button
                           ref={el => (buttonRefs.current[cls.id] = el)}
@@ -126,6 +183,24 @@ export default function ManageClasses() {
                             >
                               Delete
                             </button>
+                            <button
+                              onClick={() => { setSelectedClass(cls); setShowAddStudentModal(true); setActionClassId(null); }}
+                              className="block w-full px-4 py-2 text-left text-green-700 hover:bg-green-100"
+                            >
+                              Add Student
+                            </button>
+                            <button
+                              onClick={() => { handleViewStudents(cls); setActionClassId(null); }}
+                              className="block w-full px-4 py-2 text-left text-blue-700 hover:bg-blue-100"
+                            >
+                              View Students
+                            </button>
+                            <button
+                              onClick={() => { handleToggleStatus(cls); setActionClassId(null); }}
+                              className={`block w-full px-4 py-2 text-left ${cls.status === 'archived' ? 'text-green-700 hover:bg-green-100' : 'text-gray-700 hover:bg-gray-100'}`}
+                            >
+                              {cls.status === 'archived' ? 'Mark as Active' : 'Archive'}
+                            </button>
                           </div>
                         )}
                       </td>
@@ -137,6 +212,47 @@ export default function ManageClasses() {
         </div>
       </Section>
 
+      {/* Archived Classes Section */}
+      <Section title="Archived Classes">
+        {Object.entries(
+          classes.filter(cls => cls.status === 'archived')
+            .reduce((acc, cls) => {
+              const year = cls.schoolYear || 'Unknown Year';
+              if (!acc[year]) acc[year] = [];
+              acc[year].push(cls);
+              return acc;
+            }, {})
+        ).length === 0 ? (
+          <div className="text-gray-500">No archived classes.</div>
+        ) : (
+          Object.entries(
+            classes.filter(cls => cls.status === 'archived')
+              .reduce((acc, cls) => {
+                const year = cls.schoolYear || 'Unknown Year';
+                if (!acc[year]) acc[year] = [];
+                acc[year].push(cls);
+                return acc;
+              }, {})
+          ).map(([year, archivedClasses]) => (
+            <div key={year} className="mb-6">
+              <h3 className="font-bold text-md mb-2">{year}</h3>
+              <div className="flex flex-wrap gap-2">
+                {archivedClasses.map(cls => (
+                  <button
+                    key={cls.id}
+                    className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-black shadow text-sm flex items-center gap-2"
+                    onClick={() => { handleViewStudents(cls); }}
+                  >
+                    <span className="font-semibold">{cls.sectionName}</span>
+                    <span className="text-xs text-gray-600">({cls.gradeLevel})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </Section>
+
       <RegisterClassModal
         open={showModal}
         onClose={() => setShowModal(false)}
@@ -144,6 +260,67 @@ export default function ManageClasses() {
         initialData={editData}
         users={users}
       />
+
+      {showAddStudentModal && (
+        <AddStudentToClassModal
+          open={showAddStudentModal}
+          onClose={() => { setShowAddStudentModal(false); setSelectedClass(null); }}
+          classData={selectedClass}
+          students={students}
+          onStudentAdded={() => setRefresh(r => !r)}
+          allClassStudentIds={classes.flatMap(cls => Array.isArray(cls.students) ? cls.students : [])}
+        />
+      )}
+
+      {showViewStudentsModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Students in {selectedClass?.sectionName}</h3>
+            {studentsInClass.length === 0 ? (
+              <p className="text-gray-500">No students assigned to this class.</p>
+            ) : (
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  handleRemoveSelectedStudents();
+                }}
+              >
+                <ul className="space-y-2 max-h-60 overflow-y-auto">
+                  {studentsInClass.map(student => (
+                    <li key={student.id} className="border-b py-1 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedStudentsToRemove.includes(student.id)}
+                        onChange={e => {
+                          setSelectedStudentsToRemove(prev =>
+                            e.target.checked
+                              ? [...prev, student.id]
+                              : prev.filter(id => id !== student.id)
+                          );
+                        }}
+                      />
+                      {student.lastName}, {student.firstName} ({student.learningReferenceNumber})
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="submit"
+                  className="mt-4 btn bg-red-600 text-white w-full"
+                  disabled={selectedStudentsToRemove.length === 0}
+                >
+                  Remove Selected
+                </button>
+              </form>
+            )}
+            <button
+              className="mt-4 btn bg-blue-600 text-white w-full"
+              onClick={() => { setShowViewStudentsModal(false); setSelectedStudentsToRemove([]); }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
