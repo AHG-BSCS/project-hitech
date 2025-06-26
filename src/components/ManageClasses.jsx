@@ -26,7 +26,10 @@ export default function ManageClasses() {
   useEffect(() => {
     const fetchClasses = async () => {
       const snapshot = await getDocs(collection(db, 'classes'));
-      setClasses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setClasses(snapshot.docs.map(doc => {
+        const data = doc.data();
+        return { id: doc.id, ...data, status: data.status || 'active' };
+      }));
     };
     fetchClasses();
   }, [refresh]);
@@ -94,6 +97,13 @@ export default function ManageClasses() {
     setRefresh(r => !r);
   };
 
+  const handleToggleStatus = async (cls) => {
+    const classRef = doc(db, 'classes', cls.id);
+    const newStatus = cls.status === 'archived' ? 'active' : 'archived';
+    await updateDoc(classRef, { status: newStatus });
+    setRefresh(r => !r);
+  };
+
   return (
     <div>
       <Section title="Manage Classes">
@@ -122,15 +132,17 @@ export default function ManageClasses() {
             <table className="table w-full text-sm text-left text-gray-700">
               <thead className="bg-gray-100 text-black sticky top-0 z-10">
                 <tr>
-                  <th>Grade Level</th>
                   <th>Section Name</th>
+                  <th>Grade Level</th>
                   <th>Adviser</th>
                   <th>School Year</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {classes
+                  .filter(cls => cls.status !== 'archived')
                   .filter(cls =>
                     cls.gradeLevel?.toLowerCase().includes(searchClass.toLowerCase()) ||
                     cls.sectionName?.toLowerCase().includes(searchClass.toLowerCase()) ||
@@ -138,10 +150,15 @@ export default function ManageClasses() {
                   )
                   .map(cls => (
                     <tr key={cls.id} className={`${actionClassId === cls.id ? 'bg-blue-200 text-black' : 'hover:bg-blue-100 hover:text-black'}`}>
-                      <td>{cls.gradeLevel}</td>
                       <td>{cls.sectionName}</td>
+                      <td>{cls.gradeLevel}</td>
                       <td>{cls.adviser}</td>
                       <td>{cls.schoolYear || '-'}</td>
+                      <td>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${cls.status === 'archived' ? 'bg-gray-400 text-white' : 'bg-green-500 text-white'}`}>
+                          {cls.status === 'archived' ? 'Archived' : 'Active'}
+                        </span>
+                      </td>
                       <td className="relative">
                         <button
                           ref={el => (buttonRefs.current[cls.id] = el)}
@@ -178,6 +195,12 @@ export default function ManageClasses() {
                             >
                               View Students
                             </button>
+                            <button
+                              onClick={() => { handleToggleStatus(cls); setActionClassId(null); }}
+                              className={`block w-full px-4 py-2 text-left ${cls.status === 'archived' ? 'text-green-700 hover:bg-green-100' : 'text-gray-700 hover:bg-gray-100'}`}
+                            >
+                              {cls.status === 'archived' ? 'Mark as Active' : 'Archive'}
+                            </button>
                           </div>
                         )}
                       </td>
@@ -187,6 +210,47 @@ export default function ManageClasses() {
             </table>
           </div>
         </div>
+      </Section>
+
+      {/* Archived Classes Section */}
+      <Section title="Archived Classes">
+        {Object.entries(
+          classes.filter(cls => cls.status === 'archived')
+            .reduce((acc, cls) => {
+              const year = cls.schoolYear || 'Unknown Year';
+              if (!acc[year]) acc[year] = [];
+              acc[year].push(cls);
+              return acc;
+            }, {})
+        ).length === 0 ? (
+          <div className="text-gray-500">No archived classes.</div>
+        ) : (
+          Object.entries(
+            classes.filter(cls => cls.status === 'archived')
+              .reduce((acc, cls) => {
+                const year = cls.schoolYear || 'Unknown Year';
+                if (!acc[year]) acc[year] = [];
+                acc[year].push(cls);
+                return acc;
+              }, {})
+          ).map(([year, archivedClasses]) => (
+            <div key={year} className="mb-6">
+              <h3 className="font-bold text-md mb-2">{year}</h3>
+              <div className="flex flex-wrap gap-2">
+                {archivedClasses.map(cls => (
+                  <button
+                    key={cls.id}
+                    className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-black shadow text-sm flex items-center gap-2"
+                    onClick={() => { handleViewStudents(cls); }}
+                  >
+                    <span className="font-semibold">{cls.sectionName}</span>
+                    <span className="text-xs text-gray-600">({cls.gradeLevel})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
       </Section>
 
       <RegisterClassModal
