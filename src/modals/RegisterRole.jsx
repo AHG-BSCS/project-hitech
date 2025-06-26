@@ -101,6 +101,20 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
     }
 
     try {
+      // Check for duplicate role name (case-insensitive)
+      const rolesSnapshot = await getDocs(collection(db, 'roles'));
+      const duplicate = rolesSnapshot.docs.find(doc => {
+        const name = doc.data().name || '';
+        // If editing, allow the same name for the current role
+        if (editRole && doc.id === editRole.id) return false;
+        return name.trim().toLowerCase() === roleName.trim().toLowerCase();
+      });
+      if (duplicate) {
+        setMessage('❌ A role with this name already exists.');
+        setLoading(false);
+        return;
+      }
+
       let roleRef;
       const batch = writeBatch(db);
       
