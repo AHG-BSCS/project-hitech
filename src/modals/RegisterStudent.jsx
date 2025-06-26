@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 
 export default function RegisterStudent({ open, onClose, refreshStudents, studentToEdit, viewOnly = false }) {
   const [learningReferenceNumber, setLRN] = useState('');
@@ -154,7 +155,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
 
           <div className="flex gap-10">
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-800 mb-1">Date</label>
+              <label className="block text-sm font-medium text-gray-800 mb-1">Birthdate</label>
               <input
                 type="date"
                 className={`input input-bordered w-full bg-white border border-gray-300 text-black pr-10 ${viewOnly ? 'cursor-default' : ''}`}
@@ -163,15 +164,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
                 required
                 readOnly={viewOnly}
               />
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-5 h-5 text-gray-800 absolute right-3 top-11 transform -translate-y-1/2 pointer-events-none"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+              <CalendarDaysIcon className="w-5 h-5 text-gray-800 absolute right-3 top-11 transform -translate-y-1/2 pointer-events-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">Sex</label>
