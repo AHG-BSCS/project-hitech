@@ -6,9 +6,14 @@ const PERMISSIONS = {
     MANAGE_SETTINGS: 1 << 4,   // 16
     MANAGE_ROLES: 1 << 5,      // 32
     PORTAL_SETTINGS: 1 << 6,   // 64
+    // View-only permissions
+    VIEW_STUDENTS: 1 << 7,     // 128
+    VIEW_CLASSES: 1 << 8,      // 256
+    VIEW_GRADES: 1 << 9,       // 512
+    VIEW_USERS: 1 << 10,       // 1024
   };
   
-  // Calculate the value for all permissions combined (127)
+  // Calculate the value for all permissions combined (now includes view permissions)
   export const ALL_PERMISSIONS_VALUE = Object.values(PERMISSIONS).reduce((a, b) => a | b, 0);
   
   export const hasPermission = (userPermissions, permission) => {

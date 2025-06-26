@@ -65,13 +65,21 @@ export default function Dashboard() {
 
   const menuItems = [
     ['home', 'Home'],
-    ...(hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS) ? [['student_info', 'Student Information']] : []),
-    ...(hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) ? [['grade', 'Grade']] : []),
-    ...(hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) ? [['classes', 'Classes']] : []),
-    ...(hasPermission(permissions, PERMISSIONS.MANAGE_USERS) ? [['users', 'Users']] : []),
-    ...(hasPermission(permissions, PERMISSIONS.MANAGE_ROLES) ? [['roles', 'Roles']] : []),
-    ...(hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS) ? [['settings', 'Settings']] : []),
-    ...(hasPermission(permissions, PERMISSIONS.PORTAL_SETTINGS) ? [['portal_settings', 'Portal Settings']] : []),
+    // Show if MANAGE or VIEW permission is present
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS) || hasPermission(permissions, PERMISSIONS.VIEW_STUDENTS)
+      ? [['student_info', 'Student Information']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) || hasPermission(permissions, PERMISSIONS.VIEW_GRADES)
+      ? [['grade', 'Grade']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) || hasPermission(permissions, PERMISSIONS.VIEW_CLASSES)
+      ? [['classes', 'Classes']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_USERS) || hasPermission(permissions, PERMISSIONS.VIEW_USERS)
+      ? [['users', 'Users']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_ROLES)
+      ? [['roles', 'Roles']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)
+      ? [['settings', 'Settings']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.PORTAL_SETTINGS)
+      ? [['portal_settings', 'Portal Settings']] : []),
   ];
 
   // Map menu keys to icons
@@ -208,11 +216,27 @@ export default function Dashboard() {
         <main className="p-5 flex-1 overflow-y-auto">
           <Routes>
             <Route index element={<Home />} />
-            <Route path="student_info" element={requirePermission(PERMISSIONS.MANAGE_STUDENTS) ? <ManageStudents permissions={permissions} /> : <NotAuthorized />} />
-            <Route path="users" element={requirePermission(PERMISSIONS.MANAGE_USERS) ? <ManageUsers permissions={permissions} /> : <NotAuthorized />} />
+            <Route path="student_info" element={
+              hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS) || hasPermission(permissions, PERMISSIONS.VIEW_STUDENTS)
+                ? <ManageStudents permissions={permissions} />
+                : <NotAuthorized />
+            } />
+            <Route path="users" element={
+              hasPermission(permissions, PERMISSIONS.MANAGE_USERS) || hasPermission(permissions, PERMISSIONS.VIEW_USERS)
+                ? <ManageUsers permissions={permissions} />
+                : <NotAuthorized />
+            } />
             <Route path="roles" element={requirePermission(PERMISSIONS.MANAGE_ROLES) ? <ManageRoles permissions={permissions} /> : <NotAuthorized />} />
-            <Route path="classes" element={requirePermission(PERMISSIONS.MANAGE_CLASSES) ? <ManageClasses permissions={permissions} /> : <NotAuthorized />} />
-            <Route path="grade" element={requirePermission(PERMISSIONS.MANAGE_GRADES) ? <GenericSection title="Manage Grades" /> : <NotAuthorized />} />
+            <Route path="classes" element={
+              hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) || hasPermission(permissions, PERMISSIONS.VIEW_CLASSES)
+                ? <ManageClasses permissions={permissions} />
+                : <NotAuthorized />
+            } />
+            <Route path="grade" element={
+              hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) || hasPermission(permissions, PERMISSIONS.VIEW_GRADES)
+                ? <GenericSection title="Manage Grades" />
+                : <NotAuthorized />
+            } />
             <Route path="settings" element={requirePermission(PERMISSIONS.MANAGE_SETTINGS) ? <GenericSection title="Manage Settings" /> : <NotAuthorized />} />
             <Route path="portal_settings" element={requirePermission(PERMISSIONS.PORTAL_SETTINGS) ? <PortalSettings /> : <NotAuthorized />} />
             <Route path="*" element={<GenericSection title="Not Found" />} />

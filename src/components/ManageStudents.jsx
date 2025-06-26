@@ -53,23 +53,30 @@ export default function ManageStudents({ permissions }) {
     setActionStudentId(id);
   };
 
-  if (!hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS)) {
+  if (!hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS) && !hasPermission(permissions, PERMISSIONS.VIEW_STUDENTS)) {
     return (
       <Section title="Access Denied">
-        <p className="text-red-500">You do not have permission to manage students.</p>
+        <p className="text-red-500">You do not have permission to view students.</p>
       </Section>
     );
   }
 
+  // Helper: is view-only (has view but not manage)
+  const isViewOnly =
+    hasPermission(permissions, PERMISSIONS.VIEW_STUDENTS) &&
+    !hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS);
+
   return (
     <div>
       <Section title="Manage Students">
-        <button
-          onClick={() => setShowRegisterStudentModal(true)}
-          className="btn bg-blue-600 text-white"
-        >
-          Add Student
-        </button>
+        {!isViewOnly && (
+          <button
+            onClick={() => setShowRegisterStudentModal(true)}
+            className="btn bg-blue-600 text-white"
+          >
+            Add Student
+          </button>
+        )}
       </Section>
 
       <Section>
@@ -141,23 +148,27 @@ export default function ManageStudents({ permissions }) {
                             >
                               View Student
                             </button>
-                            <button
-                                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                                onClick={() => {
-                                  setStudentToEdit(student);
-                                  setShowRegisterStudentModal(true);
-                                  setActionStudentId(null);
-                                  setViewOnly(false);
-                                }}                                                              
-                            >
-                                Edit Student
-                            </button>
-                            <button
-                                className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
-                                onClick={() => handleDeleteStudent(student.id)}
-                            >
-                                Delete Student
-                            </button>
+                            {!isViewOnly && (
+                              <>
+                                <button
+                                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                                  onClick={() => {
+                                    setStudentToEdit(student);
+                                    setShowRegisterStudentModal(true);
+                                    setActionStudentId(null);
+                                    setViewOnly(false);
+                                  }}
+                                >
+                                  Edit Student
+                                </button>
+                                <button
+                                  className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
+                                  onClick={() => handleDeleteStudent(student.id)}
+                                >
+                                  Delete Student
+                                </button>
+                              </>
+                            )}
                             </div>
                         )}
                         </td>
