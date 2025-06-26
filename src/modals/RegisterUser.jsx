@@ -72,6 +72,30 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
     const password = 'hitech123';
 
     try {
+      // Check for duplicate email or employeeId
+      const usersRef = collection(db, 'users');
+      const snapshot = await getDocs(usersRef);
+      let emailExists = false;
+      let employeeIdExists = false;
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.email === email) emailExists = true;
+        if (data.employeeId === employeeId) employeeIdExists = true;
+      });
+      if (emailExists || employeeIdExists) {
+        let msg = '❌ ';
+        if (emailExists && employeeIdExists) {
+          msg += 'Email and Employee ID already exist.';
+        } else if (emailExists) {
+          msg += 'Email already exists.';
+        } else {
+          msg += 'Employee ID already exists.';
+        }
+        setMessage(msg);
+        setLoading(false);
+        return;
+      }
+
       const roleObj = roles.find(r => r.name === role);
       if (!roleObj) throw new Error('Selected role is invalid');
 
