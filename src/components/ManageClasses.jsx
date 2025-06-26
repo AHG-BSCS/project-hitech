@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import RegisterClassModal from '../modals/RegisterClass';
@@ -9,6 +9,10 @@ export default function ManageClasses() {
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState(null);
   const [refresh, setRefresh] = useState(false);
+  const [actionClassId, setActionClassId] = useState(null);
+  const [dropUp, setDropUp] = useState(false);
+  const [users, setUsers] = useState([]);
+  const buttonRefs = useRef({});
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -17,6 +21,14 @@ export default function ManageClasses() {
     };
     fetchClasses();
   }, [refresh]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const snapshot = await getDocs(collection(db, 'users'));
+      setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    };
+    fetchUsers();
+  }, []);
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this class?')) {
@@ -28,6 +40,20 @@ export default function ManageClasses() {
   const handleEdit = (cls) => {
     setEditData(cls);
     setShowModal(true);
+  };
+
+  const toggleDropdown = (id) => {
+    if (actionClassId === id) {
+      setActionClassId(null);
+      return;
+    }
+    const button = buttonRefs.current[id];
+    if (button) {
+      const rect = button.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setDropUp(spaceBelow < 120);
+    }
+    setActionClassId(id);
   };
 
   return (
@@ -72,23 +98,36 @@ export default function ManageClasses() {
                     cls.adviser?.toLowerCase().includes(searchClass.toLowerCase())
                   )
                   .map(cls => (
-                    <tr key={cls.id} className="hover:bg-blue-100 hover:text-black">
+                    <tr key={cls.id} className={`$ {actionClassId === cls.id ? 'bg-blue-200 text-black' : 'hover:bg-blue-100 hover:text-black'}`}>
                       <td>{cls.gradeLevel}</td>
                       <td>{cls.sectionName}</td>
                       <td>{cls.adviser}</td>
-                      <td className="space-x-2">
+                      <td className="relative">
                         <button
-                          className="btn btn-xs bg-yellow-400 text-black"
-                          onClick={() => handleEdit(cls)}
+                          ref={el => (buttonRefs.current[cls.id] = el)}
+                          onClick={() => toggleDropdown(cls.id)}
+                          className="text-xl px-2 py-1 rounded"
                         >
-                          Edit
+                          ⋮
                         </button>
-                        <button
-                          className="btn btn-xs btn-error text-white"
-                          onClick={() => handleDelete(cls.id)}
-                        >
-                          Delete
-                        </button>
+                        {actionClassId === cls.id && (
+                          <div
+                            className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-32 bg-white border rounded shadow-md z-10`}
+                          >
+                            <button
+                              onClick={() => { setEditData(cls); setShowModal(true); setActionClassId(null); }}
+                              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => { handleDelete(cls.id); setActionClassId(null); }}
+                              className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-100"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -103,6 +142,7 @@ export default function ManageClasses() {
         onClose={() => setShowModal(false)}
         onSaved={() => setRefresh(r => !r)}
         initialData={editData}
+        users={users}
       />
     </div>
   );

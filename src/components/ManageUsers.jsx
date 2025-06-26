@@ -1,8 +1,78 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { collection, getDocs, deleteDoc, doc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 import RegisterUser from '../modals/RegisterUser';
+
+function ResetPasswordModal({ open, onClose, user, onSubmit }) {
+  const [generate, setGenerate] = useState(true);
+  const [password, setPassword] = useState('');
+  const [requireChange, setRequireChange] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setGenerate(true);
+      setPassword('');
+      setRequireChange(true);
+      setLoading(false);
+    }
+  }, [open]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    await onSubmit({
+      password: generate ? null : password,
+      generate,
+      requireChange,
+    });
+    setLoading(false);
+  };
+
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+      <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
+        <h2 className="text-lg font-bold mb-4">Reset Password for {user?.email}</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={generate}
+              onChange={() => setGenerate(!generate)}
+            />
+            <span>Generate random password</span>
+          </label>
+          {!generate && (
+            <input
+              type="text"
+              className="input input-bordered w-full"
+              placeholder="Enter new password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+            />
+          )}
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={requireChange}
+              onChange={() => setRequireChange(!requireChange)}
+            />
+            <span>Require user to change password on next login</span>
+          </label>
+          <div className="flex justify-end space-x-2">
+            <button type="button" className="btn" onClick={onClose} disabled={loading}>Cancel</button>
+            <button type="submit" className="btn bg-blue-600 text-white" disabled={loading}>
+              {loading ? 'Processing...' : 'Submit'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 export default function ManageUsers({ permissions }) {
   const [users, setUsers] = useState([]);
@@ -11,6 +81,8 @@ export default function ManageUsers({ permissions }) {
   const [dropUp, setDropUp] = useState(false);
   const buttonRefs = useRef({});
   const [showRegisterUserModal, setShowRegisterUserModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetUser, setResetUser] = useState(null);
 
   useEffect(() => {
     fetchUser();
@@ -23,14 +95,35 @@ export default function ManageUsers({ permissions }) {
   }; 
 
   const handleMakeInactive = async (uid) => {
-    await setDoc(doc(auth._delegate.app.firestore(), 'users', uid), { active: false }, { merge: true });
+    await setDoc(doc(db, 'users', uid), { active: false }, { merge: true });
     alert('User marked inactive');
   };
 
-  const handleResetPassword = async (email) => {
+  const handleResetPassword = (user) => {
+    setResetUser(user);
+    setShowResetModal(true);
+  };
+
+  const handleResetPasswordSubmit = async ({ password, generate, requireChange }) => {
+    // Generate a random password if needed
+    let newPassword = password;
+    if (generate) {
+      newPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-2);
+    }
     try {
-      await auth.sendPasswordResetEmail(email);
-      alert('Password reset email sent');
+      // NOTE: Only admins can set passwords via Firebase Admin SDK, not client SDK.
+      // Here, we just update Firestore and show the password, but in production, this should be done server-side.
+      await setDoc(doc(db, 'users', resetUser.id), {
+        requirePasswordChange: requireChange,
+        tempPassword: newPassword,
+      }, { merge: true });
+      alert(
+        generate
+          ? `Temporary password generated: ${newPassword}`
+          : `Password set to: ${newPassword}`
+      );
+      setShowResetModal(false);
+      setResetUser(null);
     } catch (err) {
       alert('Failed: ' + err.message);
     }
@@ -38,7 +131,7 @@ export default function ManageUsers({ permissions }) {
 
   const handleDeleteUser = async (uid) => {
     if (confirm('Are you sure?')) {
-      await deleteDoc(doc(auth._delegate.app.firestore(), 'users', uid));
+      await deleteDoc(doc(db, 'users', uid));
       setUsers(prev => prev.filter(user => user.id !== uid));
       alert('User deleted');
     }
@@ -78,7 +171,6 @@ export default function ManageUsers({ permissions }) {
           Add User
         </button>
       </Section>
-
       <Section>
         <div className="w-full flex flex-col space-y-4">
           <input
@@ -88,12 +180,12 @@ export default function ManageUsers({ permissions }) {
             value={searchUser}
             onChange={(e) => setSearchUser(e.target.value)}
           />
-
           <div className="h-[350px] overflow-y-auto border rounded shadow">
             <table className="table w-full text-sm text-left text-gray-700">
               <thead className="bg-gray-100 text-black sticky top-0 z-10">
                 <tr>
                   <th>Employee ID</th>
+                  <th>Name</th>
                   <th>Email</th>
                   <th>Role</th>
                   <th>Actions</th>
@@ -108,15 +200,18 @@ export default function ManageUsers({ permissions }) {
                   .map(user => (
                     <tr
                       key={user.id}
-                      className={`${
+                      className={`$${
                         actionUserId === user.id
                           ? 'bg-blue-200 text-black'
                           : 'hover:bg-blue-100 hover:text-black'
                       }`}
                     >
                       <td>{user.employeeId}</td>
+                      <td>{user.name}</td>
                       <td>{user.email}</td>
-                      <td>{user.role}</td>
+                      <td>{user.role} {user.active === false && (
+  <span className="ml-2 px-2 py-0.5 rounded bg-gray-400 text-white text-xs">Inactive</span>
+)}</td>
                       <td className="relative">
                         <button
                           ref={(el) => (buttonRefs.current[user.id] = el)}
@@ -136,7 +231,7 @@ export default function ManageUsers({ permissions }) {
                               Make Inactive
                             </button>
                             <button
-                              onClick={() => handleResetPassword(user.email)}
+                              onClick={() => handleResetPassword(user)}
                               className="block w-full px-4 py-2 text-left hover:bg-gray-100"
                             >
                               Reset Password
@@ -164,6 +259,12 @@ export default function ManageUsers({ permissions }) {
           refreshUsers={fetchUser}
         />
       )}
+      <ResetPasswordModal
+        open={showResetModal}
+        onClose={() => { setShowResetModal(false); setResetUser(null); }}
+        user={resetUser}
+        onSubmit={handleResetPasswordSubmit}
+      />
     </div>
   );
 }

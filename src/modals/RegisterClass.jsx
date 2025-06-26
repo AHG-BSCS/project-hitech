@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, setDoc, doc } from 'firebase/firestore';
 
-export default function RegisterClassModal({ open, onClose, onSaved, initialData }) {
+export default function RegisterClassModal({ open, onClose, onSaved, initialData, users = [] }) {
   const [gradeLevel, setGradeLevel] = useState('');
   const [sectionName, setSectionName] = useState('');
   const [adviser, setAdviser] = useState('');
+  const [adviserSearch, setAdviserSearch] = useState('');
+  const [adviserDropdownOpen, setAdviserDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -14,6 +16,8 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
       setGradeLevel(initialData?.gradeLevel || '');
       setSectionName(initialData?.sectionName || '');
       setAdviser(initialData?.adviser || '');
+      setAdviserSearch('');
+      setAdviserDropdownOpen(false);
       setMessage('');
     }
   }, [initialData, open]);
@@ -88,13 +92,49 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
 
           <div>
             <label className="block mb-1 text-gray-800 font-medium">Adviser</label>
-            <input
-              type="text"
-              className="input input-bordered w-full bg-white text-black border border-gray-300"
-              value={adviser}
-              onChange={e => (setAdviser(e.target.value), setMessage(''))}
-              required
-            />
+            <div className="relative">
+              <input
+                type="text"
+                className="input input-bordered w-full bg-white text-black border border-gray-300 mb-1"
+                placeholder="Search adviser by name or email"
+                value={adviserSearch || adviser}
+                onChange={e => {
+                  setAdviserSearch(e.target.value);
+                  setAdviser('');
+                  setAdviserDropdownOpen(true);
+                }}
+                autoComplete="off"
+                onFocus={() => setAdviserDropdownOpen(true)}
+                onBlur={() => setTimeout(() => setAdviserDropdownOpen(false), 150)}
+              />
+              {adviserDropdownOpen && (
+                <ul className="absolute z-20 bg-white border border-gray-300 w-full max-h-40 overflow-y-auto rounded shadow">
+                  {(adviserSearch === '' ? users : users.filter(u =>
+                    (u.name || '').toLowerCase().includes(adviserSearch.toLowerCase()) ||
+                    (u.email || '').toLowerCase().includes(adviserSearch.toLowerCase())
+                  ))
+                    .map(u => (
+                      <li
+                        key={u.id}
+                        className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                        onMouseDown={() => {
+                          setAdviser(u.name ? `${u.name} (${u.email})` : u.email);
+                          setAdviserSearch('');
+                          setAdviserDropdownOpen(false);
+                        }}
+                      >
+                        {u.name ? `${u.name} (${u.email})` : u.email}
+                      </li>
+                    ))}
+                  {(adviserSearch !== '' && users.filter(u =>
+                    (u.name || '').toLowerCase().includes(adviserSearch.toLowerCase()) ||
+                    (u.email || '').toLowerCase().includes(adviserSearch.toLowerCase())
+                  ).length === 0) && (
+                    <li className="px-4 py-2 text-gray-400">No advisers found</li>
+                  )}
+                </ul>
+              )}
+            </div>
           </div>
 
           {message && (

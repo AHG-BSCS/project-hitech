@@ -11,6 +11,7 @@ export default function ManageRoles({ permissions }) {
   const [dropUp, setDropUp] = useState(false);
   const buttonRefs = useRef({});
   const [showRegisterRoleModal, setShowRegisterRoleModal] = useState(false);
+  const [editRole, setEditRole] = useState(null); // NEW: Track role being edited
 
   useEffect(() => {
     fetchRoles();
@@ -71,7 +72,7 @@ export default function ManageRoles({ permissions }) {
     <div>
       <Section title="Manage Roles">
         <div>
-          <button onClick={() => setShowRegisterRoleModal(true)} className="btn bg-blue-500 text-white">
+          <button onClick={() => { setShowRegisterRoleModal(true); setEditRole(null); }} className="btn bg-blue-500 text-white">
             Add Role
           </button>
         </div>
@@ -126,7 +127,11 @@ export default function ManageRoles({ permissions }) {
                           >
                             <button
                               className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                              onClick={() => alert('Edit role not implemented')}
+                              onClick={() => {
+                                setEditRole(role); // Set role to edit
+                                setShowRegisterRoleModal(true);
+                                setActionUserId(null);
+                              }}
                             >
                               Edit Role
                             </button>
@@ -149,8 +154,9 @@ export default function ManageRoles({ permissions }) {
       {showRegisterRoleModal && (
         <RegisterRole
           open={showRegisterRoleModal}
-          onClose={() => setShowRegisterRoleModal(false)}
+          onClose={() => { setShowRegisterRoleModal(false); setEditRole(null); }}
           refreshRoles={fetchRoles}
+          editRole={editRole} // Pass role to edit
         />
       )}
     </div>

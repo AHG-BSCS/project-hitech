@@ -1,14 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, setDoc, collection } from 'firebase/firestore';
 import PERMISSIONS from '../modules/Permissions';
 
-export default function RegisterRole({ open, onClose, refreshRoles }) {
+export default function RegisterRole({ open, onClose, refreshRoles, editRole }) {
   const [roleName, setRoleName] = useState('');
   const [permissions, setPermissions] = useState(0);
   const [permissionInput, setPermissionInput] = useState('0');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (editRole) {
+      setRoleName(editRole.name || '');
+      setPermissions(editRole.permission || 0);
+      setPermissionInput((editRole.permission || 0).toString());
+    } else {
+      setRoleName('');
+      setPermissions(0);
+      setPermissionInput('0');
+    }
+    setMessage('');
+  }, [editRole, open]);
 
   if (!open) return null;
 
@@ -47,12 +60,22 @@ export default function RegisterRole({ open, onClose, refreshRoles }) {
     }
 
     try {
-      const roleRef = doc(collection(db, 'roles'));
-
-      await setDoc(roleRef, {
-        name: roleName,
-        permission: permissions,
-      });
+      let roleRef;
+      if (editRole && editRole.id) {
+        // Update existing role
+        roleRef = doc(db, 'roles', editRole.id);
+        await setDoc(roleRef, {
+          name: roleName,
+          permission: permissions,
+        }, { merge: true });
+      } else {
+        // Add new role
+        roleRef = doc(collection(db, 'roles'));
+        await setDoc(roleRef, {
+          name: roleName,
+          permission: permissions,
+        });
+      }
 
       setRoleName('');
       setPermissionInput('0');
@@ -62,6 +85,7 @@ export default function RegisterRole({ open, onClose, refreshRoles }) {
       if (typeof refreshRoles === 'function') {
         refreshRoles();
       }
+      onClose();
     } catch (err) {
       console.error('Error saving role:', err);
       setMessage(`❌ ${err.message}`);
@@ -73,7 +97,7 @@ export default function RegisterRole({ open, onClose, refreshRoles }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
       <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold mb-4 text-center text-black">Register Role</h2>
+        <h2 className="text-lg font-bold mb-4 text-center text-black">{editRole ? 'Edit Role' : 'Register Role'}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-800 mb-1">Role Name</label>
@@ -137,7 +161,7 @@ export default function RegisterRole({ open, onClose, refreshRoles }) {
               className="btn bg-blue-500 hover:bg-blue-600 text-white"
               disabled={loading}
             >
-              {loading ? 'Saving...' : 'Save Role'}
+              {loading ? (editRole ? 'Saving...' : 'Saving...') : (editRole ? 'Update Role' : 'Save Role')}
             </button>
           </div>
         </form>
