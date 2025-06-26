@@ -71,7 +71,7 @@ export default function Dashboard() {
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_USERS) ? [['users', 'Users']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_ROLES) ? [['roles', 'Roles']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS) ? [['settings', 'Settings']] : []),
-    ...(userRole === 'superadmin' ? [['portal_settings', 'Portal Settings']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.PORTAL_SETTINGS) ? [['portal_settings', 'Portal Settings']] : []),
   ];
 
   // Map menu keys to icons
@@ -214,7 +214,7 @@ export default function Dashboard() {
             <Route path="classes" element={requirePermission(PERMISSIONS.MANAGE_CLASSES) ? <ManageClasses permissions={permissions} /> : <NotAuthorized />} />
             <Route path="grade" element={requirePermission(PERMISSIONS.MANAGE_GRADES) ? <GenericSection title="Manage Grades" /> : <NotAuthorized />} />
             <Route path="settings" element={requirePermission(PERMISSIONS.MANAGE_SETTINGS) ? <GenericSection title="Manage Settings" /> : <NotAuthorized />} />
-            <Route path="portal_settings" element={userRole === 'superadmin' ? <PortalSettings /> : <NotAuthorized />} />
+            <Route path="portal_settings" element={requirePermission(PERMISSIONS.PORTAL_SETTINGS) ? <PortalSettings /> : <NotAuthorized />} />
             <Route path="*" element={<GenericSection title="Not Found" />} />
           </Routes>
         </main>

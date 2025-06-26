@@ -3,6 +3,29 @@ import { db } from '../firebase';
 import { doc, setDoc, collection, getDocs, writeBatch, query, where } from 'firebase/firestore';
 import PERMISSIONS, { ALL_PERMISSIONS_VALUE } from '../modules/Permissions';
 
+// Tooltip component
+const Tooltip = ({ children, text }) => {
+  const [show, setShow] = useState(false);
+  
+  return (
+    <div className="relative inline-block">
+      <div
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        className="cursor-help"
+      >
+        {children}
+      </div>
+      {show && (
+        <div className="absolute z-20 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-md shadow-lg bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 max-w-[90vw] whitespace-pre-line">
+          {text}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function RegisterRole({ open, onClose, refreshRoles, editRole }) {
   const [roleName, setRoleName] = useState('');
   const [permissions, setPermissions] = useState(0);
@@ -150,7 +173,26 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-800 mb-1">Permission Integer</label>
+            <label className="flex items-center text-sm font-medium text-gray-800 mb-1">
+              Permission Integer
+              <Tooltip text={`Permission System:
+• 0 = All Permissions (Admin)
+• Each permission has a bit value
+• Add values to combine permissions
+
+Examples:
+• READ_USERS (1) + WRITE_USERS (2) = 3
+• All individual permissions = ${ALL_PERMISSIONS_VALUE}
+
+Available permissions:
+${Object.entries(PERMISSIONS).map(([name, bit]) => 
+  `• ${name.replace(/_/g, ' ')}: ${bit}`
+).join('\n')}`}>
+                <svg className="w-4 h-4 ml-1 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+              </Tooltip>
+            </label>
             <input
               type="number"
               min="0"
