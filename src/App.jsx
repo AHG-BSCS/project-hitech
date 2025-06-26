@@ -19,7 +19,15 @@ function App() {
     }
   }, [settings]);
 
-  if (loading) return <div className="flex items-center justify-center h-screen">Loading system settings...</div>;
+  if (loading) {
+    // Subtle blurred overlay with background color, no text
+    let bgStyle = { background: settings?.bgValue || '#f3f4f6' };
+    return (
+      <div className="min-h-screen flex items-center relative" style={bgStyle}>
+        <div className="absolute inset-0 bg-white/30 backdrop-blur-md z-0 transition-opacity duration-500"></div>
+      </div>
+    );
+  }
 
   return (
     <Router>

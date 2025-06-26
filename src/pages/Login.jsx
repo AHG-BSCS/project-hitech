@@ -85,7 +85,27 @@ export default function Login() {
     fetchBgSettings();
   }, []);
 
-  if (settingsLoading) return <div className="flex items-center justify-center h-screen">Loading system settings...</div>;
+  if (settingsLoading) {
+    // Use the same background logic as the main return
+    let bgStyle = {};
+    if (bgSettings) {
+      if (bgSettings.bgType === 'color') {
+        bgStyle.background = bgSettings.bgValue || '#f3f4f6';
+      } else if (bgSettings.bgType === 'image' && bgImage) {
+        bgStyle.background = `url(${bgImage}) center/cover no-repeat`;
+      }
+    } else if (settings?.bgType === 'color') {
+      bgStyle.background = settings.bgValue || '#f3f4f6';
+    } else if (settings?.bgType === 'image' && bgImage) {
+      bgStyle.background = `url(${bgImage}) center/cover no-repeat`;
+    }
+    // Show only the blurred overlay, no card or spinner
+    return (
+      <div className="min-h-screen flex items-center relative" style={bgStyle}>
+        <div className="absolute inset-0 bg-white/30 backdrop-blur-md z-0 transition-opacity duration-500"></div>
+      </div>
+    );
+  }
 
   // Login card location
   let justify = 'center';

@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [permissions, setPermissions] = useState(0);
   const [searchSidebar, setSearchSidebar] = useState('');
   const [userRole, setUserRole] = useState('');
+  const [loading, setLoading] = useState(true);
   const { settings } = useSystemSettings();
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function Dashboard() {
           setUserRole(userData.role || '');
         }
       }
+      setLoading(false);
     });
     return () => unsubscribe();
   }, [navigate]);
@@ -83,6 +85,40 @@ export default function Dashboard() {
     settings: <FaCogs className="w-7 h-7 mr-2" />,
     portal_settings: <FaSchool className="w-7 h-7 mr-2" />,
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-gray-100">
+        {/* Sidebar placeholder */}
+        <aside className="fixed top-0 left-0 h-full bg-blue-900 text-white w-64 md:relative md:flex-shrink-0 animate-pulse" style={{ background: settings?.colorPalette || '#2563eb' }}>
+          <div className="flex flex-col h-full p-5 items-center justify-center">
+            <div className="flex flex-col items-center">
+              <svg className="animate-spin h-8 w-8 text-white mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+              <span className="text-xs text-white opacity-80">Loading system settings...</span>
+            </div>
+          </div>
+        </aside>
+        {/* Main Content placeholder */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <header className="flex justify-between items-center p-5 bg-white border-b border-gray-200 flex-wrap gap-4 flex-shrink-0 min-h-[64px] animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-6 bg-gray-200 rounded w-24"></div>
+          </header>
+          <main className="p-5 flex-1 overflow-y-auto">
+            <div className="h-48 bg-white rounded-lg shadow-md border border-gray-200 flex items-center justify-center animate-pulse">
+              <span className="text-gray-400">Preparing dashboard...</span>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // Helper to check permission for a route
+  const requirePermission = (perm) => hasPermission(permissions, perm);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -170,18 +206,18 @@ export default function Dashboard() {
 
         {/* Section Content */}
         <main className="p-5 flex-1 overflow-y-auto">
-        <Routes>
-          <Route index element={<Home />} />
-          <Route path="student_info" element={<ManageStudents permissions={permissions} />} />
-          <Route path="users" element={<ManageUsers permissions={permissions} />} />
-          <Route path="roles" element={<ManageRoles permissions={permissions} />} />
-          <Route path="classes" element={<ManageClasses permissions={permissions} />} />
-          <Route path="grade" element={<GenericSection title="Manage Grades" />} />
-          <Route path="settings" element={<GenericSection title="Manage Settings" />} />
-          <Route path="portal_settings" element={<PortalSettings />} />
-          <Route path="*" element={<GenericSection title="Not Found" />} />
-        </Routes>
-      </main>
+          <Routes>
+            <Route index element={<Home />} />
+            <Route path="student_info" element={requirePermission(PERMISSIONS.MANAGE_STUDENTS) ? <ManageStudents permissions={permissions} /> : <NotAuthorized />} />
+            <Route path="users" element={requirePermission(PERMISSIONS.MANAGE_USERS) ? <ManageUsers permissions={permissions} /> : <NotAuthorized />} />
+            <Route path="roles" element={requirePermission(PERMISSIONS.MANAGE_ROLES) ? <ManageRoles permissions={permissions} /> : <NotAuthorized />} />
+            <Route path="classes" element={requirePermission(PERMISSIONS.MANAGE_CLASSES) ? <ManageClasses permissions={permissions} /> : <NotAuthorized />} />
+            <Route path="grade" element={requirePermission(PERMISSIONS.MANAGE_GRADES) ? <GenericSection title="Manage Grades" /> : <NotAuthorized />} />
+            <Route path="settings" element={requirePermission(PERMISSIONS.MANAGE_SETTINGS) ? <GenericSection title="Manage Settings" /> : <NotAuthorized />} />
+            <Route path="portal_settings" element={userRole === 'superadmin' ? <PortalSettings /> : <NotAuthorized />} />
+            <Route path="*" element={<GenericSection title="Not Found" />} />
+          </Routes>
+        </main>
       </div>
     </div>
   );
@@ -205,6 +241,18 @@ function GenericSection({ title }) {
       <h2 className="text-xl font-bold text-black mb-4">{title}</h2>
       <div className="text-center text-gray-500 h-48 flex items-center justify-center">
         Content for {title} goes here.
+      </div>
+    </div>
+  );
+}
+
+// Not Authorized Component
+function NotAuthorized() {
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-md border border-red-300">
+      <h2 className="text-xl font-bold text-red-600 mb-4">Not Authorized</h2>
+      <div className="text-center text-gray-500 h-48 flex items-center justify-center">
+        You are not authorized to view this page.
       </div>
     </div>
   );
