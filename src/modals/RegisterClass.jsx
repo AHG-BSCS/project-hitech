@@ -6,6 +6,7 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
   const [gradeLevel, setGradeLevel] = useState('');
   const [sectionName, setSectionName] = useState('');
   const [adviser, setAdviser] = useState('');
+  const [schoolYear, setSchoolYear] = useState('');
   const [adviserSearch, setAdviserSearch] = useState('');
   const [adviserDropdownOpen, setAdviserDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,6 +17,7 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
       setGradeLevel(initialData?.gradeLevel || '');
       setSectionName(initialData?.sectionName || '');
       setAdviser(initialData?.adviser || '');
+      setSchoolYear(initialData?.schoolYear || '');
       setAdviserSearch('');
       setAdviserDropdownOpen(false);
       setMessage('');
@@ -33,6 +35,7 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
           gradeLevel,
           sectionName,
           adviser,
+          schoolYear,
           createdAt: initialData.createdAt || new Date(),
         }, { merge: true });
         setMessage('✅ Class updated successfully!');
@@ -41,11 +44,13 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
           gradeLevel,
           sectionName,
           adviser,
+          schoolYear,
           createdAt: new Date(),
         });
         setGradeLevel('');
         setSectionName('');
         setAdviser('');
+        setSchoolYear('');
         setMessage('✅ Class added successfully!');
       }
 
@@ -86,6 +91,18 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
               className="input input-bordered w-full bg-white text-black border border-gray-300"
               value={sectionName}
               onChange={e => (setSectionName(e.target.value), setMessage(''))}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 text-gray-800 font-medium">School Year</label>
+            <input
+              type="text"
+              className="input input-bordered w-full bg-white text-black border border-gray-300"
+              value={schoolYear}
+              onChange={e => (setSchoolYear(e.target.value), setMessage(''))}
+              placeholder="e.g. 2024-2025"
               required
             />
           </div>
