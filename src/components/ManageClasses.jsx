@@ -27,6 +27,8 @@ export default function ManageClasses({ permissions }) {
   const [currentUserName, setCurrentUserName] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
   const [currentUserEmail, setCurrentUserEmail] = useState('');
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [classToArchive, setClassToArchive] = useState(null);
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -164,6 +166,12 @@ export default function ManageClasses({ permissions }) {
     };
   }, [actionClassId]);
 
+  const handleArchiveClick = (cls) => {
+    setClassToArchive(cls);
+    setShowArchiveModal(true);
+    setActionClassId(null);
+  };
+
   return (
     <div>
       <Section title="Manage Classes">
@@ -254,20 +262,20 @@ export default function ManageClasses({ permissions }) {
                                 >
                                   Add Student
                                 </button>
-                                <button
-                                  onClick={() => { handleToggleStatus(cls); setActionClassId(null); }}
-                                  className={`block w-full px-4 py-2 text-left ${cls.status === 'archived' ? 'text-green-700 hover:bg-green-100' : 'text-gray-700 hover:bg-gray-100'}`}
-                                >
-                                  {cls.status === 'archived' ? 'Mark as Active' : 'Archive'}
-                                </button>
-                              </>
-                            )}
                             <button
                               onClick={() => { handleViewStudents(cls); setActionClassId(null); }}
                               className="block w-full px-4 py-2 text-left text-blue-700 hover:bg-blue-100"
                             >
                               View Students
                             </button>
+                                <button
+                                  onClick={() => { handleArchiveClick(cls); }}
+                                  className={`block w-full px-4 py-2 text-left ${cls.status === 'archived' ? 'text-green-700 hover:bg-green-100' : 'text-gray-700 hover:bg-gray-100'}`}
+                                >
+                                  {cls.status === 'archived' ? 'Mark as Active' : 'Archive'}
+                                </button>
+                              </>
+                            )}
                           </div>
                         )}
                       </td>
@@ -281,43 +289,67 @@ export default function ManageClasses({ permissions }) {
 
       {/* Archived Classes Section */}
       <Section title="Archived Classes">
-        {Object.entries(
-          filteredClasses.filter(cls => cls.status === 'archived')
+        {(() => {
+          // Group archived classes by school year
+          const grouped = filteredClasses.filter(cls => cls.status === 'archived')
             .reduce((acc, cls) => {
               const year = cls.schoolYear || 'Unknown Year';
               if (!acc[year]) acc[year] = [];
               acc[year].push(cls);
               return acc;
-            }, {})
-        ).length === 0 ? (
-          <div className="text-gray-500">No archived classes.</div>
-        ) : (
-          Object.entries(
-            filteredClasses.filter(cls => cls.status === 'archived')
-              .reduce((acc, cls) => {
-                const year = cls.schoolYear || 'Unknown Year';
-                if (!acc[year]) acc[year] = [];
-                acc[year].push(cls);
-                return acc;
-              }, {})
-          ).map(([year, archivedClasses]) => (
-            <div key={year} className="mb-6">
-              <h3 className="font-bold text-md mb-2">{year}</h3>
-              <div className="flex flex-wrap gap-2">
-                {archivedClasses.map(cls => (
-                  <button
-                    key={cls.id}
-                    className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-black shadow text-sm flex items-center gap-2"
-                    onClick={() => { handleViewStudents(cls); }}
-                  >
-                    <span className="font-semibold">{cls.sectionName}</span>
-                    <span className="text-xs text-gray-600">({cls.gradeLevel})</span>
-                  </button>
-                ))}
-              </div>
+            }, {});
+          const years = Object.keys(grouped).sort((a, b) => {
+            // Sort years descending, handle 'Unknown Year' last
+            if (a === 'Unknown Year') return 1;
+            if (b === 'Unknown Year') return -1;
+            return b.localeCompare(a);
+          });
+          if (years.length === 0) {
+            return <div className="text-gray-500">No archived classes.</div>;
+          }
+          return (
+            <div className="flex flex-row gap-8 overflow-x-auto pb-2">
+              {years.map(year => {
+                const archivedClasses = grouped[year];
+                // Chunk into rows of 2
+                const rows = [];
+                for (let i = 0; i < archivedClasses.length; i += 2) {
+                  rows.push(archivedClasses.slice(i, i + 2));
+                }
+                return (
+                  <div key={year} className="min-w-[340px] flex-shrink-0">
+                    <h3 className="font-bold text-md mb-2 text-center">{year}</h3>
+                    <div className="flex flex-col gap-4">
+                      {rows.map((row, idx) => (
+                        <div key={idx} className="flex flex-row gap-4">
+                          {row.map(cls => (
+                            <div
+                              key={cls.id}
+                              className="bg-gray-100 rounded-lg shadow p-4 w-full max-w-xs flex flex-col gap-2 border border-gray-300"
+                            >
+                              <div className="flex flex-col gap-1">
+                                <span className="font-semibold text-lg text-black">{cls.sectionName}</span>
+                                <span className="text-sm text-gray-700">Grade: {cls.gradeLevel}</span>
+                                <span className="text-sm text-gray-700">Adviser: {cls.adviser}</span>
+                                <span className="text-xs text-gray-500">School Year: {cls.schoolYear || '-'}</span>
+                              </div>
+                              <button
+                                className="mt-2 px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow"
+                                onClick={() => { handleViewStudents(cls); }}
+                              >
+                                View Students
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))
-        )}
+          );
+        })()}
       </Section>
 
       <RegisterClassModal
@@ -389,6 +421,34 @@ export default function ManageClasses({ permissions }) {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Archive Confirmation Modal */}
+      {showArchiveModal && classToArchive && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4 text-red-700">Archive Class?</h3>
+            <p className="mb-4 text-black">Are you sure you want to archive the class <span className="font-semibold">{classToArchive.sectionName}</span>? <br/> <span className="text-red-600 font-bold">This action is <u>irreversible</u> and will remove the class from active use.</span></p>
+            <div className="flex gap-4">
+              <button
+                className="btn bg-red-600 text-white flex-1"
+                onClick={async () => {
+                  await handleToggleStatus(classToArchive);
+                  setShowArchiveModal(false);
+                  setClassToArchive(null);
+                }}
+              >
+                Yes, Archive
+              </button>
+              <button
+                className="btn bg-gray-300 text-black flex-1"
+                onClick={() => { setShowArchiveModal(false); setClassToArchive(null); }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

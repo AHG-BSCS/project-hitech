@@ -63,6 +63,21 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
     }
   };
 
+  // School year options: previous year to 3 years ahead
+  const getSchoolYearOptions = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const startYear = now.getMonth() >= 5 ? currentYear : currentYear - 1; // School year starts after June
+    const options = [];
+    for (let i = -1; i <= 3; i++) {
+      const y1 = startYear + i;
+      const y2 = y1 + 1;
+      options.push(`${y1}-${y2}`);
+    }
+    return options;
+  };
+  const schoolYearOptions = getSchoolYearOptions();
+
   if (!open) return null;
 
   return (
@@ -75,13 +90,17 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block mb-1 text-gray-800 font-medium">Grade Level</label>
-            <input
-              type="text"
+            <select
               className="input input-bordered w-full bg-white text-black border border-gray-300"
               value={gradeLevel}
               onChange={e => (setGradeLevel(e.target.value), setMessage(''))}
               required
-            />
+            >
+              <option value="" disabled>Select grade level</option>
+              {[7,8,9,10].map(g => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -97,14 +116,17 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
 
           <div>
             <label className="block mb-1 text-gray-800 font-medium">School Year</label>
-            <input
-              type="text"
+            <select
               className="input input-bordered w-full bg-white text-black border border-gray-300"
               value={schoolYear}
               onChange={e => (setSchoolYear(e.target.value), setMessage(''))}
-              placeholder="e.g. 2024-2025"
               required
-            />
+            >
+              <option value="" disabled>Select school year</option>
+              {schoolYearOptions.map(yr => (
+                <option key={yr} value={yr}>{yr}</option>
+              ))}
+            </select>
           </div>
 
           <div>
