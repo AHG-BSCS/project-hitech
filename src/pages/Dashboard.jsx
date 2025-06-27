@@ -24,6 +24,7 @@ export default function Dashboard() {
   const [searchSidebar, setSearchSidebar] = useState('');
   const [userRole, setUserRole] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showLockedModal, setShowLockedModal] = useState(false);
   const { settings } = useSystemSettings();
 
   useEffect(() => {
@@ -35,6 +36,13 @@ export default function Dashboard() {
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
+          if (userData.isLocked) {
+            setShowLockedModal(true);
+            await signOut(auth);
+            localStorage.removeItem('employeeId');
+            localStorage.removeItem('isAuthenticated');
+            return;
+          }
           setEmployeeId(userData.employeeId);
           localStorage.setItem('employeeId', userData.employeeId);
           setPermissions(userData.permissions || 0);
@@ -243,6 +251,8 @@ export default function Dashboard() {
           </Routes>
         </main>
       </div>
+
+      <LockedModal open={showLockedModal} onClose={() => setShowLockedModal(false)} />
     </div>
   );
 }
@@ -277,6 +287,21 @@ function NotAuthorized() {
       <h2 className="text-xl font-bold text-red-600 mb-4">Not Authorized</h2>
       <div className="text-center text-gray-500 h-48 flex items-center justify-center">
         You are not authorized to view this page.
+      </div>
+    </div>
+  );
+}
+
+function LockedModal({ open, onClose }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+      <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
+        <h2 className="text-lg font-bold mb-4 text-red-600">Account Locked</h2>
+        <p className="mb-4">Your account has been locked. Please contact your administrator for more information.</p>
+        <div className="flex justify-end">
+          <button type="button" className="btn" onClick={onClose}>Close</button>
+        </div>
       </div>
     </div>
   );

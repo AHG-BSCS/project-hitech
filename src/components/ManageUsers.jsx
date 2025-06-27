@@ -1,32 +1,34 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { collection, getDocs, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 import RegisterUser from '../modals/RegisterUser';
 
-function ResetPasswordModal({ open, onClose, user, onSubmit }) {
-  const [generate, setGenerate] = useState(true);
-  const [password, setPassword] = useState('');
-  const [requireChange, setRequireChange] = useState(true);
+function ResetPasswordModal({ open, onClose, user }) {
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (open) {
-      setGenerate(true);
-      setPassword('');
-      setRequireChange(true);
       setLoading(false);
+      setMessage('');
+      setError('');
     }
   }, [open]);
 
-  const handleSubmit = async (e) => {
+  const handleSendReset = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await onSubmit({
-      password: generate ? null : password,
-      generate,
-      requireChange,
-    });
+    setMessage('');
+    setError('');
+    try {
+      await sendPasswordResetEmail(auth, user.email);
+      setMessage('Password reset email sent successfully.');
+    } catch (err) {
+      setError('Failed to send reset email: ' + err.message);
+    }
     setLoading(false);
   };
 
@@ -34,41 +36,63 @@ function ResetPasswordModal({ open, onClose, user, onSubmit }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
       <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-        <h2 className="text-lg font-bold mb-4">Reset Password for {user?.email}</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={generate}
-              onChange={() => setGenerate(!generate)}
-            />
-            <span>Generate random password</span>
-          </label>
-          {!generate && (
-            <input
-              type="text"
-              className="input input-bordered w-full"
-              placeholder="Enter new password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
-          )}
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={requireChange}
-              onChange={() => setRequireChange(!requireChange)}
-            />
-            <span>Require user to change password on next login</span>
-          </label>
-          <div className="flex justify-end space-x-2">
-            <button type="button" className="btn" onClick={onClose} disabled={loading}>Cancel</button>
-            <button type="submit" className="btn bg-blue-600 text-white" disabled={loading}>
-              {loading ? 'Processing...' : 'Submit'}
-            </button>
-          </div>
-        </form>
+        <h2 className="text-lg font-bold mb-4">Send Password Reset Email</h2>
+        <p className="mb-4">Send a password reset link to <span className="font-semibold">{user?.email}</span>?</p>
+        {message && <div className="text-green-600 mb-2">{message}</div>}
+        {error && <div className="text-red-600 mb-2">{error}</div>}
+        <div className="flex justify-end space-x-2">
+          <button type="button" className="btn" onClick={onClose} disabled={loading}>Cancel</button>
+          <button type="button" className="btn bg-blue-600 text-white" onClick={handleSendReset} disabled={loading || message}>
+            {loading ? 'Sending...' : 'Send Reset Link'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LockUserModal({ open, onClose, onConfirm, user }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+      <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
+        <h2 className="text-lg font-bold mb-4">Lock User</h2>
+        <p className="mb-4">Are you sure you want to <span className="font-semibold">lock</span> the account for <span className="font-semibold">{user?.email}</span>?</p>
+        <div className="flex justify-end space-x-2">
+          <button type="button" className="btn" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn bg-yellow-600 text-white" onClick={onConfirm}>Lock User</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UnlockUserModal({ open, onClose, onConfirm, user }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+      <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
+        <h2 className="text-lg font-bold mb-4">Unlock User</h2>
+        <p className="mb-4">Are you sure you want to <span className="font-semibold">unlock</span> the account for <span className="font-semibold">{user?.email}</span>?</p>
+        <div className="flex justify-end space-x-2">
+          <button type="button" className="btn" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn bg-green-600 text-white" onClick={onConfirm}>Unlock User</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SuccessModal({ open, onClose, message }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+      <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
+        <h2 className="text-lg font-bold mb-4">Success</h2>
+        <p className="mb-4">{message}</p>
+        <div className="flex justify-end">
+          <button type="button" className="btn bg-blue-600 text-white" onClick={onClose}>OK</button>
+        </div>
       </div>
     </div>
   );
@@ -83,6 +107,12 @@ export default function ManageUsers({ permissions }) {
   const [showRegisterUserModal, setShowRegisterUserModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetUser, setResetUser] = useState(null);
+  const [showLockModal, setShowLockModal] = useState(false);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [lockUser, setLockUser] = useState(null);
+  const [unlockUser, setUnlockUser] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     fetchUser();
@@ -96,7 +126,8 @@ export default function ManageUsers({ permissions }) {
 
   const handleMakeInactive = async (uid) => {
     await setDoc(doc(db, 'users', uid), { active: false }, { merge: true });
-    alert('User marked inactive');
+    setSuccessMessage('User marked inactive');
+    setShowSuccessModal(true);
   };
 
   const handleResetPassword = (user) => {
@@ -104,37 +135,45 @@ export default function ManageUsers({ permissions }) {
     setShowResetModal(true);
   };
 
-  const handleResetPasswordSubmit = async ({ password, generate, requireChange }) => {
-    // Generate a random password if needed
-    let newPassword = password;
-    if (generate) {
-      newPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-2);
-    }
-    try {
-      // NOTE: Only admins can set passwords via Firebase Admin SDK, not client SDK.
-      // Here, we just update Firestore and show the password, but in production, this should be done server-side.
-      await setDoc(doc(db, 'users', resetUser.id), {
-        requirePasswordChange: requireChange,
-        tempPassword: newPassword,
-      }, { merge: true });
-      alert(
-        generate
-          ? `Temporary password generated: ${newPassword}`
-          : `Password set to: ${newPassword}`
-      );
-      setShowResetModal(false);
-      setResetUser(null);
-    } catch (err) {
-      alert('Failed: ' + err.message);
-    }
-  };
-
   const handleDeleteUser = async (uid) => {
     if (confirm('Are you sure?')) {
       await deleteDoc(doc(db, 'users', uid));
       setUsers(prev => prev.filter(user => user.id !== uid));
-      alert('User deleted');
+      setSuccessMessage('User deleted');
+      setShowSuccessModal(true);
     }
+  };
+
+  const handleLockUser = async (uid) => {
+    const user = users.find(u => u.id === uid);
+    setLockUser(user);
+    setShowLockModal(true);
+  };
+
+  const handleUnlockUser = async (uid) => {
+    const user = users.find(u => u.id === uid);
+    setUnlockUser(user);
+    setShowUnlockModal(true);
+  };
+
+  const confirmLockUser = async () => {
+    if (!lockUser) return;
+    await setDoc(doc(db, 'users', lockUser.id), { isLocked: true }, { merge: true });
+    setShowLockModal(false);
+    setLockUser(null);
+    setSuccessMessage('User locked');
+    setShowSuccessModal(true);
+    fetchUser();
+  };
+
+  const confirmUnlockUser = async () => {
+    if (!unlockUser) return;
+    await setDoc(doc(db, 'users', unlockUser.id), { isLocked: false }, { merge: true });
+    setShowUnlockModal(false);
+    setUnlockUser(null);
+    setSuccessMessage('User unlocked');
+    setShowSuccessModal(true);
+    fetchUser();
   };
 
   const toggleDropdown = (id) => {
@@ -211,7 +250,10 @@ export default function ManageUsers({ permissions }) {
                       <td>{user.email}</td>
                       <td>{user.role} {user.active === false && (
   <span className="ml-2 px-2 py-0.5 rounded bg-gray-400 text-white text-xs">Inactive</span>
-)}</td>
+)} {user.isLocked && (
+  <span className="ml-2 px-2 py-0.5 rounded bg-yellow-500 text-white text-xs">Locked</span>
+)}
+                      </td>
                       <td className="relative">
                         <button
                           ref={(el) => (buttonRefs.current[user.id] = el)}
@@ -236,6 +278,21 @@ export default function ManageUsers({ permissions }) {
                             >
                               Reset Password
                             </button>
+                            {user.isLocked ? (
+                              <button
+                                onClick={() => handleUnlockUser(user.id)}
+                                className="block w-full px-4 py-2 text-left hover:bg-green-100"
+                              >
+                                Unlock User
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleLockUser(user.id)}
+                                className="block w-full px-4 py-2 text-left hover:bg-yellow-100"
+                              >
+                                Lock User
+                              </button>
+                            )}
                             <button
                               onClick={() => handleDeleteUser(user.id)}
                               className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-100"
@@ -263,7 +320,23 @@ export default function ManageUsers({ permissions }) {
         open={showResetModal}
         onClose={() => { setShowResetModal(false); setResetUser(null); }}
         user={resetUser}
-        onSubmit={handleResetPasswordSubmit}
+      />
+      <LockUserModal
+        open={showLockModal}
+        onClose={() => { setShowLockModal(false); setLockUser(null); }}
+        onConfirm={confirmLockUser}
+        user={lockUser}
+      />
+      <UnlockUserModal
+        open={showUnlockModal}
+        onClose={() => { setShowUnlockModal(false); setUnlockUser(null); }}
+        onConfirm={confirmUnlockUser}
+        user={unlockUser}
+      />
+      <SuccessModal
+        open={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        message={successMessage}
       />
     </div>
   );
