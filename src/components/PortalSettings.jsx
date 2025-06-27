@@ -209,6 +209,7 @@ const PortalSettings = () => {
     setLogoChanged(false);
     setBgChanged(false);
     setTimeout(() => setSuccess(false), 2000);
+    window.location.reload();
   };
 
   return (
@@ -365,7 +366,7 @@ const PortalSettings = () => {
               className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
               disabled={loading}
             >
-              {loading ? 'Saving...' : 'Save Settings'}
+              {loading ? 'Saving...' : 'Save Settings' }
             </button>
           </div>
           
