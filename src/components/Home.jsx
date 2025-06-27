@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../firebase';
-import { collection, getCountFromServer } from 'firebase/firestore';
+import { collection, getCountFromServer, getDocs } from 'firebase/firestore';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const OVERVIEW = [
   {
@@ -36,6 +37,7 @@ const OVERVIEW = [
 export default function DashboardHome() {
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -56,6 +58,29 @@ export default function DashboardHome() {
       });
       setStats(newStats);
       setLoading(false);
+
+      const fetchChartData = async () => {
+        const snapshot = await getDocs(collection(db, 'students'));
+        const data = {};
+      
+        snapshot.forEach(doc => {
+          const student = doc.data();
+          const year = student.schoolYear || 'Unknown';
+          const grade = student.gradeLevel || 'Unknown';
+      
+          if (!data[year]) data[year] = { schoolYear: year, total: 0 };
+          data[year].total += 1;
+      
+          if (!data[year][grade]) data[year][grade] = 0;
+          data[year][grade] += 1;
+        });
+      
+        // Convert object to sorted array by schoolYear
+        const sortedData = Object.values(data).sort((a, b) => a.schoolYear.localeCompare(b.schoolYear));
+        setChartData(sortedData);
+      };
+      
+      fetchChartData();      
     };
     fetchCounts();
   }, []);
@@ -76,9 +101,30 @@ export default function DashboardHome() {
         </div>
       </Section>
       <Section title="Student Population">
-        <div className="text-center text-gray-500 h-48 flex items-center justify-center">
-          Chart
-        </div>
+      <ResponsiveContainer width="100%" height={400}>
+  <LineChart data={chartData}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="schoolYear" />
+    <YAxis allowDecimals={false} />
+    <Tooltip />
+    <Legend />
+    <Line type="monotone" dataKey="total" stroke="#8884d8" strokeWidth={3} name="Total Students" />
+    {/* Auto-generate grade lines */}
+    {chartData.length > 0 &&
+      Object.keys(chartData[0])
+        .filter(key => key !== 'schoolYear' && key !== 'total')
+        .map((grade, idx) => (
+          <Line
+            key={grade}
+            type="monotone"
+            dataKey={grade}
+            stroke={['#82ca9d', '#ffc658', '#ff7300', '#ff4d4f', '#00bcd4'][idx % 5]}
+            name={grade}
+            strokeDasharray="4 2"
+          />
+        ))}
+  </LineChart>
+</ResponsiveContainer>
       </Section>
     </>
   );
