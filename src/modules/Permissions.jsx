@@ -6,11 +6,13 @@ const PERMISSIONS = {
     MANAGE_SETTINGS: 1 << 4,   // 16
     MANAGE_ROLES: 1 << 5,      // 32
     PORTAL_SETTINGS: 1 << 6,   // 64
+    MANAGE_SUBJECTS: 1 << 7,   // 128
     // View-only permissions
-    VIEW_STUDENTS: 1 << 7,     // 128
-    VIEW_CLASSES: 1 << 8,      // 256
-    VIEW_GRADES: 1 << 9,       // 512
-    VIEW_USERS: 1 << 10,       // 1024
+    VIEW_STUDENTS: 1 << 8,     // 256
+    VIEW_CLASSES: 1 << 9,      // 512
+    ENCODE_GRADES: 1 << 10,    // 1024
+    VIEW_USERS: 1 << 11,       // 2048
+    VIEW_SUBJECTS: 1 << 12,    // 4096
   };
   
   // Calculate the value for all permissions combined (now includes view permissions)
