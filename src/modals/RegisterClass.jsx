@@ -125,7 +125,7 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
                 onBlur={() => setTimeout(() => setAdviserDropdownOpen(false), 150)}
               />
               {adviserDropdownOpen && (
-                <ul className="absolute z-20 bg-white border border-gray-300 w-full max-h-40 overflow-y-auto rounded shadow">
+                <ul className="absolute z-20 bg-white text-black border border-gray-300 w-full max-h-40 overflow-y-auto rounded shadow">
                   {(adviserSearch === '' ? users : users.filter(u =>
                     (u.name || '').toLowerCase().includes(adviserSearch.toLowerCase()) ||
                     (u.email || '').toLowerCase().includes(adviserSearch.toLowerCase())

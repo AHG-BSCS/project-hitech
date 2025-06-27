@@ -213,13 +213,13 @@ const PortalSettings = () => {
   return (
     <div className="max-w-3xl mx-auto mt-8">
       <Section title="Portal Settings">
-        <form className="space-y-6" onSubmit={e => { e.preventDefault(); handleSave(); }}>
+        <form className="space-y-6 text-black" onSubmit={e => { e.preventDefault(); handleSave(); }}>
           {/* Title Bar */}
           <div>
             <label className="block font-medium mb-1">System Title Bar</label>
             <input
               type="text"
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={titleBar}
               onChange={e => setTitleBar(e.target.value)}
               placeholder="Enter system title bar text"
@@ -230,7 +230,7 @@ const PortalSettings = () => {
             <label className="block font-medium mb-1">Color Palette</label>
             <input
               type="color"
-              className="w-16 h-10 p-0 border-none"
+              className="w-16 h-10 p-0 border border-gray-300 bg-white"
               value={colorPalette}
               onChange={e => setColorPalette(e.target.value)}
             />
@@ -240,7 +240,7 @@ const PortalSettings = () => {
             <label className="block font-medium mb-1">School ID</label>
             <input
               type="text"
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={schoolId}
               onChange={e => setSchoolId(e.target.value)}
               placeholder="Enter School ID"
@@ -251,7 +251,7 @@ const PortalSettings = () => {
             <label className="block font-medium mb-1">Division</label>
             <input
               type="text"
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={division}
               onChange={e => setDivision(e.target.value)}
               placeholder="Enter Division"
@@ -262,7 +262,7 @@ const PortalSettings = () => {
             <label className="block font-medium mb-1">Region</label>
             <input
               type="text"
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={region}
               onChange={e => setRegion(e.target.value)}
               placeholder="Enter Region"
@@ -275,6 +275,7 @@ const PortalSettings = () => {
               type="file"
               accept="image/*,.svg"
               onChange={handleLogoChange}
+              className="bg-white text-sm file:border file:border-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-white file:text-gray-700"
             />
             {(logoSvg) && (
               <div className="mt-2 h-16 rounded border bg-white flex items-center justify-center" style={{height:'4rem'}}>
@@ -293,7 +294,7 @@ const PortalSettings = () => {
           <div>
             <label className="block font-medium mb-1">Logo Display</label>
             <select
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={logoMode}
               onChange={e => setLogoMode(e.target.value)}
             >
@@ -338,6 +339,7 @@ const PortalSettings = () => {
                 type="file"
                 accept="image/*"
                 onChange={handleBgChange}
+                className="bg-white text-sm file:border file:border-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-white file:text-gray-700"
               />
             )}
             {bgType === 'image' && bgBase64 && (

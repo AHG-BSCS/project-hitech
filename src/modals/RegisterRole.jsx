@@ -28,7 +28,7 @@ const Tooltip = ({ children, text }) => {
       </div>
       {show && (
         <div
-          className="absolute z-20 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-md shadow-lg bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-96 max-w-[98vw] max-h-60 overflow-y-auto whitespace-pre-line"
+          className="absolute z-20 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-md shadow-lg top-full left-0 transform mb-2 w-96 max-w-[98vw] max-h-60 overflow-y-auto whitespace-pre-line"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
@@ -275,7 +275,7 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
               <p>Total permissions value: {permissions} {permissions === 0 && '(All Permissions)'}</p>
               <p>Individual permissions combined: {ALL_PERMISSIONS_VALUE}</p>
               <ul className="mt-1 list-disc list-inside text-xs text-gray-500">
-                <li>"View" permissions allow read-only access (e.g., teachers can view but not edit, remove, or create).</li>
+                <li>"View" permissions allow read-only access (e.g., a role can view but not edit, remove, or create).</li>
                 <li>Combine "View" and "Manage" permissions for full access.</li>
               </ul>
             </div>

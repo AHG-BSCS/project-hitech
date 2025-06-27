@@ -72,7 +72,7 @@ export default function ManageRoles({ permissions }) {
     <div>
       <Section title="Manage Roles">
         <div>
-          <button onClick={() => { setShowRegisterRoleModal(true); setEditRole(null); }} className="btn bg-blue-500 text-white">
+          <button onClick={() => { setShowRegisterRoleModal(true); setEditRole(null); }} className="btn bg-blue-600 text-white">
             Add Role
           </button>
         </div>
