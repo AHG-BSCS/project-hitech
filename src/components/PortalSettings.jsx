@@ -71,10 +71,8 @@ const PortalSettings = () => {
   const [logoChanged, setLogoChanged] = useState(false);
   const [bgChanged, setBgChanged] = useState(false);
 
-  useEffect(() => {
-    // Load settings from Firestore
-    const fetchSettings = async () => {
-      const docRef = doc(db, 'system', 'settings');
+  const fetchSettings = async () => {
+    const docRef = doc(db, 'system', 'settings');
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -106,7 +104,10 @@ const PortalSettings = () => {
       } else {
         setBgBase64('');
       }
-    };
+  };
+
+  useEffect(() => {
+    // Load settings from Firestore
     fetchSettings();
   }, []);
 
@@ -211,7 +212,7 @@ const PortalSettings = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto mt-8">
+    <div className="max-w-fill mx-auto">
       <Section title="Portal Settings">
         <form className="space-y-6 text-black" onSubmit={e => { e.preventDefault(); handleSave(); }}>
           {/* Title Bar */}
@@ -350,14 +351,24 @@ const PortalSettings = () => {
               />
             )}
           </div>
-          {/* Save Button */}
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-            disabled={loading}
-          >
-            {loading ? 'Saving...' : 'Save Settings'}
-          </button>
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={() => { fetchSettings(); }}
+              className="btn bg-gray-300 hover:bg-gray-400 text-black"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+              disabled={loading}
+            >
+              {loading ? 'Saving...' : 'Save Settings'}
+            </button>
+          </div>
+          
           {success && <div className="text-green-600 font-semibold">Settings saved!</div>}
           {error && <div className="text-red-600 font-semibold">{error}</div>}
         </form>
