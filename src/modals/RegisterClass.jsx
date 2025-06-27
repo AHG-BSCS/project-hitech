@@ -67,7 +67,7 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
   const getSchoolYearOptions = () => {
     const now = new Date();
     const currentYear = now.getFullYear();
-    const startYear = now.getMonth() >= 5 ? currentYear : currentYear - 1; // School year starts after June
+    const startYear = currentYear - 1;
     const options = [];
     for (let i = -1; i <= 3; i++) {
       const y1 = startYear + i;
