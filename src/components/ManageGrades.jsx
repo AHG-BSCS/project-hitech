@@ -17,6 +17,7 @@ export default function ManageGrades({ permissions }) {
   const [showGradeTable, setShowGradeTable] = useState({});
   const [finalized, setFinalized] = useState({}); // Track finalized state per class/subject
   const [showConfirm, setShowConfirm] = useState({}); // Track modal visibility per class/subject
+  const [modal, setModal] = useState({ open: false, message: '', type: 'info' }); // Modal state for messages
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,44 +92,76 @@ export default function ManageGrades({ permissions }) {
     }));
   };
 
+  // Helper: validate all grades are present and valid (0-100)
+  function areGradesValid(gradeEntries, students) {
+    if (!students.length) return false;
+    for (const stu of students) {
+      const val = gradeEntries[stu.id];
+      if (val === undefined || val === null || val === '') return false;
+      const num = Number(val);
+      if (isNaN(num) || num < 0 || num > 100) return false;
+    }
+    return true;
+  }
+
+  // Helper: for drafts, allow blanks but if filled, must be valid (0-100)
+  function areDraftGradesValid(gradeEntries, students) {
+    if (!students.length) return false;
+    for (const stu of students) {
+      const val = gradeEntries[stu.id];
+      if (val === undefined || val === null || val === '') continue; // allow blank
+      const num = Number(val);
+      if (isNaN(num) || num < 0 || num > 100) return false;
+    }
+    return true;
+  }
+
   // Save grades as draft (not final)
   const handleSaveDraft = async (classId, subjectId) => {
     const key = `${classId}_${subjectId}`;
     const gradeEntries = grades[key] || {};
-    for (const [studentId, grade] of Object.entries(gradeEntries)) {
-      if (grade !== undefined && grade !== '') {
-        await setDoc(doc(db, 'grades', `${classId}_${subjectId}_${studentId}`), {
-          classId,
-          subjectId,
-          studentId,
-          grade,
-          finalized: false
-        });
-      }
+    const studentsForClass = getStudentsForClass(classId);
+    if (!areDraftGradesValid(gradeEntries, studentsForClass)) {
+      setModal({ open: true, message: 'All filled grades must be valid (0-100) before saving as draft.', type: 'error' });
+      return;
+    }
+    for (const stu of studentsForClass) {
+      const grade = gradeEntries[stu.id];
+      await setDoc(doc(db, 'grades', `${classId}_${subjectId}_${stu.id}`), {
+        classId,
+        subjectId,
+        studentId: stu.id,
+        grade,
+        finalized: false
+      });
     }
     setRefresh(r => !r);
-    alert('Draft saved!');
+    setModal({ open: true, message: 'Draft saved!', type: 'success' });
   };
 
   // Save grades as final (not editable)
   const handleSaveGrades = async (classId, subjectId) => {
     const key = `${classId}_${subjectId}`;
     const gradeEntries = grades[key] || {};
-    for (const [studentId, grade] of Object.entries(gradeEntries)) {
-      if (grade !== undefined && grade !== '') {
-        await setDoc(doc(db, 'grades', `${classId}_${subjectId}_${studentId}`), {
-          classId,
-          subjectId,
-          studentId,
-          grade,
-          finalized: true
-        });
-      }
+    const studentsForClass = getStudentsForClass(classId);
+    if (!areGradesValid(gradeEntries, studentsForClass)) {
+      setModal({ open: true, message: 'All grades must be filled in and valid (0-100) before finalizing.', type: 'error' });
+      return;
+    }
+    for (const stu of studentsForClass) {
+      const grade = gradeEntries[stu.id];
+      await setDoc(doc(db, 'grades', `${classId}_${subjectId}_${stu.id}`), {
+        classId,
+        subjectId,
+        studentId: stu.id,
+        grade,
+        finalized: true
+      });
     }
     setFinalized(prev => ({ ...prev, [key]: true }));
     setRefresh(r => !r);
     setShowConfirm(prev => ({ ...prev, [key]: false }));
-    alert('Grades finalized!');
+    setModal({ open: true, message: 'Grades finalized!', type: 'success' });
   };
 
   // Permission helpers
@@ -201,7 +234,7 @@ export default function ManageGrades({ permissions }) {
                             if (!grades[`${cls.id}_${subj.id}`]) await fetchGrades(cls.id, subj.id);
                           }}
                         >
-                          {showGradeTable[`${cls.id}_${subj.id}`] ? 'Hide' : 'Encode Grades'} for {subj.name}
+                          {showGradeTable[`${cls.id}_${subj.id}`] ? 'Hide' : 'Encode Grades'}
                         </button>
                       ))}
                     </td>
@@ -240,7 +273,7 @@ export default function ManageGrades({ permissions }) {
                       return (
                         <tr key={stu.id}>
                           <td>{displayName}</td>
-                          <td className="flex items-center gap-2">
+                          <td className="flex items-center gap-2 min-h-[32px]">
                             <input
                               type="text"
                               className="input input-bordered w-24 bg-white border border-gray-300 text-black"
@@ -249,7 +282,17 @@ export default function ManageGrades({ permissions }) {
                               disabled={!canEncode}
                             />
                             {tag && (
-                              <span className={`badge ${tag === 'Outstanding' ? 'bg-green-600 text-white' : tag === 'Very Satisfactory' ? 'bg-blue-500 text-white' : tag === 'Satisfactory' ? 'bg-yellow-400 text-black' : tag === 'Fairly Satisfactory' ? 'bg-orange-400 text-black' : 'bg-red-500 text-white'}`}>{tag}</span>
+                              <span
+                                className={`inline-flex items-center px-2 py-1 rounded font-semibold min-w-0 whitespace-nowrap text-xs ${
+                                  tag === 'Outstanding' ? 'bg-green-600 text-white' :
+                                  tag === 'Very Satisfactory' ? 'bg-blue-500 text-white' :
+                                  tag === 'Satisfactory' ? 'bg-yellow-400 text-white' :
+                                  tag === 'Fairly Satisfactory' ? 'bg-orange-400 text-white' :
+                                  'bg-red-500 text-white'
+                                }`}
+                              >
+                                {tag}
+                              </span>
                             )}
                           </td>
                         </tr>
@@ -268,7 +311,16 @@ export default function ManageGrades({ permissions }) {
                     </button>
                     <button
                       className="btn bg-green-600 text-white"
-                      onClick={() => setShowConfirm(prev => ({ ...prev, [`${cls.id}_${subj.id}`]: true }))}
+                      onClick={() => {
+                        const key = `${cls.id}_${subj.id}`;
+                        const gradeEntries = grades[key] || {};
+                        const studentsForClass = getStudentsForClass(cls.id);
+                        if (!areGradesValid(gradeEntries, studentsForClass)) {
+                          setModal({ open: true, message: 'All grades must be filled in and valid (0-100) before finalizing.', type: 'error' });
+                          return;
+                        }
+                        setShowConfirm(prev => ({ ...prev, [key]: true }));
+                      }}
                       disabled={finalized[`${cls.id}_${subj.id}`]}
                     >
                       Save Grades
@@ -293,6 +345,22 @@ export default function ManageGrades({ permissions }) {
           )
         ))
       ))}
+
+      {/* Message Modal */}
+      {modal.open && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs text-center">
+            <h3 className={`text-lg font-bold mb-2 ${modal.type === 'error' ? 'text-red-600' : 'text-green-700'}`}>{modal.type === 'error' ? 'Error' : 'Success'}</h3>
+            <p className="mb-4 text-black">{modal.message}</p>
+            <button
+              className="btn bg-blue-600 text-white w-full"
+              onClick={() => setModal({ open: false, message: '', type: 'info' })}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
