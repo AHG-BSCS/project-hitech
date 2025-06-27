@@ -211,7 +211,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
               className="btn bg-gray-300 hover:bg-gray-400 text-black"
               disabled={loading}
             >
-              Cancel
+              Close
             </button>
             <button
               type="submit"
