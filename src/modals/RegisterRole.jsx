@@ -295,14 +295,14 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
               className="btn bg-gray-300 hover:bg-gray-400 text-black"
               disabled={loading}
             >
-              Cancel
+              Close
             </button>
             <button
               type="submit"
               className="btn bg-blue-500 hover:bg-blue-600 text-white"
               disabled={loading}
             >
-              {loading ? (editRole ? 'Saving...' : 'Saving...') : (editRole ? 'Update Role' : 'Save Role')}
+              {loading ? (editRole ? 'Saving...' : 'Adding...') : (editRole ? 'Update' : 'Add')}
             </button>
           </div>
         </form>

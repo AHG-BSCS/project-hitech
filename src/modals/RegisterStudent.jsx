@@ -88,7 +88,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
           ? 'View Student'
           : studentToEdit
           ? 'Edit Student'
-          : 'Register New Student'}
+          : 'Add New Student'}
       </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -231,7 +231,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
                 type="submit"
                 className="btn bg-blue-500 hover:bg-blue-600 text-white"
               >
-                {loading ? (studentToEdit ? 'Updating...' : 'Registering...') : studentToEdit ? 'Update' : 'Register'}
+                {loading ? (studentToEdit ? 'Updating...' : 'Adding...') : studentToEdit ? 'Update' : 'Add'}
               </button>
             )}
           </div>

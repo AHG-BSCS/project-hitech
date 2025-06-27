@@ -173,7 +173,7 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
               type="submit"
               className="btn bg-blue-500 hover:bg-blue-600 text-white"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? 'Adding...' : 'Add'}
             </button>
           </div>
         </form>
