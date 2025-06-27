@@ -10,6 +10,8 @@ import ManageUsers from '../components/ManageUsers';
 import ManageStudents from '../components/ManageStudents';
 import Home from '../components/Home';
 import PortalSettings from '../components/PortalSettings';
+import ManageSubjects from '../components/ManageSubjects';
+import ManageGrades from '../components/ManageGrades';
 import { useSystemSettings } from '../context/SystemSettingsContext';
 import { FaHome, FaUserGraduate, FaChalkboardTeacher, FaUsers, FaUserShield, FaCogs, FaCog, FaSchool } from 'react-icons/fa';
 
@@ -76,10 +78,12 @@ export default function Dashboard() {
     // Show if MANAGE or VIEW permission is present
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS) || hasPermission(permissions, PERMISSIONS.VIEW_STUDENTS)
       ? [['student_info', 'Student Information']] : []),
-    ...(hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) || hasPermission(permissions, PERMISSIONS.VIEW_GRADES)
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) || hasPermission(permissions, PERMISSIONS.ENCODE_GRADES)
       ? [['grade', 'Grade']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) || hasPermission(permissions, PERMISSIONS.VIEW_CLASSES)
       ? [['classes', 'Classes']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_SUBJECTS) || hasPermission(permissions, PERMISSIONS.VIEW_SUBJECTS)
+      ? [['subjects', 'Subjects']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_USERS) || hasPermission(permissions, PERMISSIONS.VIEW_USERS)
       ? [['users', 'Users']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_ROLES)
@@ -96,6 +100,7 @@ export default function Dashboard() {
     student_info: <FaUserGraduate className="w-7 h-7 mr-2" />,
     grade: <FaChalkboardTeacher className="w-7 h-7 mr-2" />,
     classes: <FaChalkboardTeacher className="w-7 h-7 mr-2" />,
+    subjects: <FaChalkboardTeacher className="w-7 h-7 mr-2" />,
     users: <FaUsers className="w-7 h-7 mr-2" />,
     roles: <FaUserShield className="w-7 h-7 mr-2" />,
     settings: <FaCogs className="w-7 h-7 mr-2" />,
@@ -241,12 +246,17 @@ export default function Dashboard() {
                 : <NotAuthorized />
             } />
             <Route path="grade" element={
-              hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) || hasPermission(permissions, PERMISSIONS.VIEW_GRADES)
-                ? <GenericSection title="Manage Grades" />
+              hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) || hasPermission(permissions, PERMISSIONS.ENCODE_GRADES)
+                ? <ManageGrades permissions={permissions} />
                 : <NotAuthorized />
             } />
             <Route path="settings" element={requirePermission(PERMISSIONS.MANAGE_SETTINGS) ? <GenericSection title="Manage Settings" /> : <NotAuthorized />} />
             <Route path="portal_settings" element={requirePermission(PERMISSIONS.PORTAL_SETTINGS) ? <PortalSettings /> : <NotAuthorized />} />
+            <Route path="subjects" element={
+              hasPermission(permissions, PERMISSIONS.MANAGE_SUBJECTS) || hasPermission(permissions, PERMISSIONS.VIEW_SUBJECTS)
+                ? <ManageSubjects permissions={permissions} />
+                : <NotAuthorized />
+            } />
             <Route path="*" element={<GenericSection title="Not Found" />} />
           </Routes>
         </main>
