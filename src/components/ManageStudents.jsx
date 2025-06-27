@@ -10,6 +10,7 @@ export default function ManageStudents({ permissions }) {
   const [actionStudentId, setActionStudentId] = useState(null);
   const [dropUp, setDropUp] = useState(false);
   const buttonRefs = useRef({});
+  const dropdownRef = useRef(null); // NEW: ref for dropdown
   const [showRegisterStudentModal, setShowRegisterStudentModal] = useState(false);
   const [studentToEdit, setStudentToEdit] = useState(null);
   const [viewOnly, setViewOnly] = useState(false);
@@ -52,6 +53,26 @@ export default function ManageStudents({ permissions }) {
 
     setActionStudentId(id);
   };
+
+  // Add effect to close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (actionStudentId !== null) {
+        const button = buttonRefs.current[actionStudentId];
+        const dropdown = dropdownRef.current;
+        if (
+          button && !button.contains(event.target) &&
+          dropdown && !dropdown.contains(event.target)
+        ) {
+          setActionStudentId(null);
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [actionStudentId]);
 
   if (!hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS) && !hasPermission(permissions, PERMISSIONS.VIEW_STUDENTS)) {
     return (
@@ -125,7 +146,7 @@ export default function ManageStudents({ permissions }) {
                         <td>{student.sex}</td>
                         <td className="relative">
                         <button
-                            ref={(el) => (buttonRefs.current[student.id] = el)}
+                            ref={el => (buttonRefs.current[student.id] = el)}
                             onClick={() => toggleDropdown(student.id)}
                             className="text-xl px-2 py-1 rounded"
                         >
@@ -133,7 +154,8 @@ export default function ManageStudents({ permissions }) {
                         </button>
                         {actionStudentId === student.id && (
                             <div
-                            className={`absolute ${
+                            ref={dropdownRef}
+                            className={`absolute $${
                                 dropUp ? 'bottom-full mb-2' : 'mt-2'
                             } right-0 w-40 bg-white border rounded shadow-md z-10`}
                             >

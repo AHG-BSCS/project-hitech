@@ -23,6 +23,7 @@ export default function ManageClasses({ permissions }) {
   const [studentsInClass, setStudentsInClass] = useState([]);
   const [selectedStudentsToRemove, setSelectedStudentsToRemove] = useState([]);
   const buttonRefs = useRef({});
+  const dropdownRef = useRef(null); // NEW: ref for dropdown
   const [currentUserName, setCurrentUserName] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
   const [currentUserEmail, setCurrentUserEmail] = useState('');
@@ -142,6 +143,27 @@ export default function ManageClasses({ permissions }) {
       })
     : classes;
 
+  // Add effect to close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      // Check if any dropdown is open
+      if (actionClassId !== null) {
+        const button = buttonRefs.current[actionClassId];
+        const dropdown = dropdownRef.current;
+        if (
+          button && !button.contains(event.target) &&
+          dropdown && !dropdown.contains(event.target)
+        ) {
+          setActionClassId(null);
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [actionClassId]);
+
   return (
     <div>
       <Section title="Manage Classes">
@@ -209,6 +231,7 @@ export default function ManageClasses({ permissions }) {
                         </button>
                         {actionClassId === cls.id && (
                           <div
+                            ref={dropdownRef}
                             className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-32 bg-white border rounded shadow-md z-10`}
                           >
                             {!isViewOnly && (

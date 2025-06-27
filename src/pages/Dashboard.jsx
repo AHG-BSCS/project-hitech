@@ -148,11 +148,23 @@ export default function Dashboard() {
         <div className="flex flex-col h-full p-5">
           {/* Profile */}
           <div className="bg-white text-black text-center rounded-lg py-5 mb-8 flex-shrink-0">
-            {settings?.logoBase64 ? (
-              <img src={settings.logoBase64} alt="Profile" className="w-10 h-10 mx-auto mb-3" />
-            ) : (
-              <img src="/placeholder.svg" alt="Profile" className="w-10 h-10 mx-auto mb-3" />
-            )}
+            <div className="flex items-center justify-center w-full" style={{ minHeight: '60px' }}>
+              {settings?.logoBase64 ? (
+                <img
+                  src={settings.logoBase64}
+                  alt="Profile"
+                  style={{ maxWidth: '100%', maxHeight: '60px', objectFit: 'contain', display: 'block' }}
+                  className="mx-auto mb-3"
+                />
+              ) : (
+                <img
+                  src="/placeholder.svg"
+                  alt="Profile"
+                  style={{ maxWidth: '100%', maxHeight: '60px', objectFit: 'contain', display: 'block' }}
+                  className="mx-auto mb-3"
+                />
+              )}
+            </div>
             <p className="text-sm">
               Welcome, <span className="font-bold">{employeeId || 'Loading...'}</span>
             </p>

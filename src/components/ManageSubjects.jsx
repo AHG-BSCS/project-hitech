@@ -14,6 +14,7 @@ export default function ManageSubjects({ permissions }) {
   const [actionSubjectId, setActionSubjectId] = useState(null);
   const [dropUp, setDropUp] = useState(false);
   const buttonRefs = useRef({});
+  const dropdownRef = useRef(null); // NEW: ref for dropdown
   const [currentUserId, setCurrentUserId] = useState('');
   const [currentUserEmail, setCurrentUserEmail] = useState('');
 
@@ -117,6 +118,26 @@ export default function ManageSubjects({ permissions }) {
     setActionSubjectId(id);
   };
 
+  // Add effect to close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (actionSubjectId !== null) {
+        const button = buttonRefs.current[actionSubjectId];
+        const dropdown = dropdownRef.current;
+        if (
+          button && !button.contains(event.target) &&
+          dropdown && !dropdown.contains(event.target)
+        ) {
+          setActionSubjectId(null);
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [actionSubjectId]);
+
   // Permission helpers
   const canManage = hasPermission(permissions, PERMISSIONS.MANAGE_SUBJECTS);
   const canView = hasPermission(permissions, PERMISSIONS.VIEW_SUBJECTS);
@@ -209,6 +230,7 @@ export default function ManageSubjects({ permissions }) {
                           </button>
                           {actionSubjectId === subj.id && (
                             <div
+                              ref={dropdownRef}
                               className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-32 bg-white border rounded shadow-md z-10`}
                             >
                               {!isViewOnly && (

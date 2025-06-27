@@ -104,6 +104,7 @@ export default function ManageUsers({ permissions }) {
   const [actionUserId, setActionUserId] = useState(null);
   const [dropUp, setDropUp] = useState(false);
   const buttonRefs = useRef({});
+  const dropdownRef = useRef(null); // NEW: ref for dropdown
   const [showRegisterUserModal, setShowRegisterUserModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetUser, setResetUser] = useState(null);
@@ -192,6 +193,26 @@ export default function ManageUsers({ permissions }) {
     setActionUserId(id);
   };
 
+  // Add effect to close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (actionUserId !== null) {
+        const button = buttonRefs.current[actionUserId];
+        const dropdown = dropdownRef.current;
+        if (
+          button && !button.contains(event.target) &&
+          dropdown && !dropdown.contains(event.target)
+        ) {
+          setActionUserId(null);
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [actionUserId]);
+
   if (!hasPermission(permissions, PERMISSIONS.MANAGE_USERS)) {
     return (
       <Section title="Access Denied">
@@ -239,7 +260,7 @@ export default function ManageUsers({ permissions }) {
                   .map(user => (
                     <tr
                       key={user.id}
-                      className={`${
+                      className={`$${
                         actionUserId === user.id
                           ? 'bg-blue-200 text-black'
                           : 'hover:bg-blue-100 hover:text-black'
@@ -256,7 +277,7 @@ export default function ManageUsers({ permissions }) {
                       </td>
                       <td className="relative">
                         <button
-                          ref={(el) => (buttonRefs.current[user.id] = el)}
+                          ref={el => (buttonRefs.current[user.id] = el)}
                           onClick={() => toggleDropdown(user.id)}
                           className="text-xl px-2 py-1 rounded"
                         >
@@ -264,6 +285,7 @@ export default function ManageUsers({ permissions }) {
                         </button>
                         {actionUserId === user.id && (
                           <div
+                            ref={dropdownRef}
                             className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-40 bg-white border rounded shadow-md z-10`}
                           >
                             <button

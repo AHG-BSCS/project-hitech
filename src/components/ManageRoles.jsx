@@ -10,6 +10,7 @@ export default function ManageRoles({ permissions }) {
   const [actionUserId, setActionUserId] = useState(null);
   const [dropUp, setDropUp] = useState(false);
   const buttonRefs = useRef({});
+  const dropdownRef = useRef(null); // NEW: ref for dropdown
   const [showRegisterRoleModal, setShowRegisterRoleModal] = useState(false);
   const [editRole, setEditRole] = useState(null); // NEW: Track role being edited
 
@@ -59,6 +60,26 @@ export default function ManageRoles({ permissions }) {
 
     setActionUserId(id);
   };
+
+  // Add effect to close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (actionUserId !== null) {
+        const button = buttonRefs.current[actionUserId];
+        const dropdown = dropdownRef.current;
+        if (
+          button && !button.contains(event.target) &&
+          dropdown && !dropdown.contains(event.target)
+        ) {
+          setActionUserId(null);
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [actionUserId]);
 
   if (!hasPermission(permissions, PERMISSIONS.MANAGE_ROLES)) {
     return (
@@ -123,6 +144,7 @@ export default function ManageRoles({ permissions }) {
                         </button>
                         {actionUserId === role.id && (
                           <div
+                            ref={dropdownRef}
                             className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-40 bg-white border rounded shadow-md z-10`}
                           >
                             <button
