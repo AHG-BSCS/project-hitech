@@ -190,7 +190,7 @@ export default function Dashboard() {
                   <button
                     key={key}
                     onClick={() => {
-                      const path = key === 'home' ? '/home' : '/home/' + key;
+                      const path = key === 'home' ? '/home' : '/' + key;
                       navigate(path);
                       setSidebarOpen(false);
                     }}
@@ -240,7 +240,7 @@ export default function Dashboard() {
         {/* Section Content */}
         <main className="p-5 flex-1 overflow-y-auto">
           <Routes>
-            <Route index element={<Home />} />
+            <Route path="home" element={<Home />} />
             <Route path="student_info" element={
               hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS) || hasPermission(permissions, PERMISSIONS.VIEW_STUDENTS)
                 ? <ManageStudents permissions={permissions} />

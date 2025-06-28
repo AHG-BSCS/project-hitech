@@ -34,14 +34,13 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route
-          path="/home/*"
+          path="/*"
           element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
           }
         />
-        <Route path="/student_information" element={<ManageStudents />} />
         {/* Catch-all route for invalid paths */}
         <Route
           path="*"
