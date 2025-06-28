@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import RegisterClassModal from '../modals/RegisterClass';
-import RegisterStudent from '../modals/RegisterStudent';
+import ManageTeachers from '../modals/ManageTeachers';
 import AddStudentToClassModal from '../modals/AddStudentToClassModal';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 
@@ -29,6 +29,8 @@ export default function ManageClasses({ permissions }) {
   const [currentUserEmail, setCurrentUserEmail] = useState('');
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [classToArchive, setClassToArchive] = useState(null);
+  const [showManageTeachersModal, setShowManageTeachersModal] = useState(false);
+  const [selectedClassForTeachers, setSelectedClassForTeachers] = useState(null);
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -257,6 +259,16 @@ export default function ManageClasses({ permissions }) {
                                   Delete
                                 </button>
                                 <button
+                                  onClick={() => {
+                                    setSelectedClassForTeachers(cls);
+                                    setShowManageTeachersModal(true);
+                                    setActionClassId(null);
+                                  }}
+                                  className="block w-full px-4 py-2 text-left text-purple-700 hover:bg-purple-100"
+                                >
+                                  Manage Teachers
+                                </button>
+                                <button
                                   onClick={() => { setSelectedClass(cls); setShowAddStudentModal(true); setActionClassId(null); }}
                                   className="block w-full px-4 py-2 text-left text-green-700 hover:bg-green-100"
                                 >
@@ -359,6 +371,19 @@ export default function ManageClasses({ permissions }) {
         initialData={editData}
         users={users}
       />
+
+      {showManageTeachersModal && selectedClassForTeachers && (
+        <ManageTeachers
+          open={showManageTeachersModal}
+          onClose={() => {
+            setShowManageTeachersModal(false);
+            setSelectedClassForTeachers(null);
+          }}
+          gradeLevel={selectedClassForTeachers.gradeLevel}
+          sectionName={selectedClassForTeachers.sectionName}
+          schoolYear={selectedClassForTeachers.schoolYear}
+        />
+      )}
 
       {showAddStudentModal && !isViewOnly && (
         <AddStudentToClassModal
