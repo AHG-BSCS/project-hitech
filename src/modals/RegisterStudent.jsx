@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
+import { generateSF9 } from '../utils/generateSF9';
 
 export default function RegisterStudent({ open, onClose, refreshStudents, studentToEdit, viewOnly = false }) {
   const [learningReferenceNumber, setLRN] = useState('');
@@ -126,6 +127,23 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handler for SF9 button
+  const handleSF9 = async () => {
+    // Use either studentToEdit or current form state
+    const student = studentToEdit || {
+      learningReferenceNumber,
+      firstName,
+      middleName,
+      lastName,
+      nameExtension,
+      birthdate,
+      sex,
+      schoolYear,
+      gradeLevel,
+    };
+    await generateSF9(student);
   };
 
   return (
@@ -288,6 +306,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
               <button
                 type="button"
                 className="btn bg-blue-500 hover:bg-blue-600 text-white"
+                onClick={handleSF9}
               >
                 SF9
               </button>
