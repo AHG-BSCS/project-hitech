@@ -49,6 +49,7 @@ export default function Login() {
   const [fetching, setFetching] = useState(false);
   const fetchedOnce = useRef(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState("");
   const [showLockedModal, setShowLockedModal] = useState(false);
 
   const handleChange = (e) => {
@@ -74,23 +75,57 @@ export default function Login() {
         setLoading(false);
         return;
       }
+      // Restrict login if userDefaultPasswordPlaintext matches entered password
       const email = userData.email;
       const auth = getAuth();
+      if (userData.userDefaultPasswordPlaintext && userData.userDefaultPasswordPlaintext === form.password) {
+        // Set requirePasswordChange to true
+        try {
+          await updateDoc(doc(db, 'users', userDoc.id), { requirePasswordChange: true });
+        } catch (err) {
+          console.error('Failed to update requirePasswordChange to true:', err);
+        }
+        // Send password reset email automatically
+        try {
+          await sendPasswordResetEmail(auth, email);
+          setErrorMsg('Your password is the default. A password reset email has been sent to your email address. Please reset your password to continue.');
+        } catch (err) {
+          setErrorMsg('Failed to send password reset email. Please contact your administrator.');
+        }
+        setLoading(false);
+        return;
+      } else {
+        // Set requirePasswordChange to false before auth
+        try {
+          await updateDoc(doc(db, 'users', userDoc.id), { requirePasswordChange: false });
+        } catch (err) {
+          console.error('Failed to update requirePasswordChange to false:', err);
+        }
+      }
       await signInWithEmailAndPassword(auth, email, form.password);
 
       const loggedInUser = auth.currentUser;
       const userRef = doc(db, 'users', loggedInUser.uid);
       const userSnap = await getDoc(userRef);
 
+      // If requirePasswordChange is true, show VerifyAccount modal and do not proceed
       if (userSnap.exists() && userSnap.data().requirePasswordChange === true) {
         setShowVerifyModal(true);
+        setVerifyEmail(email); // Pass email to modal
         setLoading(false);
         return;
-      } else {
-        localStorage.setItem('employeeId', form.employeeId);
-        localStorage.setItem('isAuthenticated', 'true');
-        navigate('/home');
       }
+      // Only set requirePasswordChange to false and proceed if it is already false
+      if (form.password !== userData.userDefaultPasswordPlaintext) {
+        try {
+          await updateDoc(doc(db, 'users', loggedInUser.uid), { requirePasswordChange: false });
+        } catch (err) {
+          console.error('Failed to update requirePasswordChange:', err);
+        }
+      }
+      localStorage.setItem('employeeId', form.employeeId);
+      localStorage.setItem('isAuthenticated', 'true');
+      navigate('/home');
     } catch (error) {
       console.error(error);
       setErrorMsg('Invalid credentials.');
@@ -249,7 +284,7 @@ export default function Login() {
           </div>
         </form>
       </div>
-      <VerifyAccount show={showVerifyModal} onClose={() => setShowVerifyModal(false)} />
+      <VerifyAccount show={showVerifyModal} onClose={() => setShowVerifyModal(false)} email={verifyEmail} />
       <LockedModal open={showLockedModal} onClose={() => setShowLockedModal(false)} />
     </div>
   );

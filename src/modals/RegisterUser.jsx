@@ -7,11 +7,13 @@ import {
   sendEmailVerification,
 } from 'firebase/auth';
 import {
+  doc,
+  getDoc,
   collection,
   setDoc,
-  doc,
   getDocs,
 } from 'firebase/firestore';
+import bcrypt from 'bcryptjs';
 
 export default function RegisterUser({ open, onClose, refreshUsers }) {
   const [form, setForm] = useState({
@@ -26,9 +28,17 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
   const [generatePassword, setGeneratePassword] = useState(true);
   const [customPassword, setCustomPassword] = useState('');
   const [requirePasswordChange, setRequirePasswordChange] = useState(true);
+  const [defaultPassword, setDefaultPassword] = useState('');
+  const [defaultPasswordPlain, setDefaultPasswordPlain] = useState('');
 
   useEffect(() => {
     if (!open) return;
+
+    // Reset form and requirePasswordChange state on open
+    setForm({ name: '', email: '', employeeId: '', role: '' });
+    setRequirePasswordChange(true);
+    setCustomPassword('');
+    setMessage('');
 
     const fetchRoles = async () => {
       try {
@@ -48,7 +58,26 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
       }
     };
 
+    const fetchDefaultPassword = async () => {
+      try {
+        const settingsRef = doc(db, 'system', 'settings');
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+          const data = settingsSnap.data();
+          if (data.userDefaultPassword) {
+            setDefaultPassword(data.userDefaultPassword);
+          }
+          if (data.userDefaultPasswordPlaintext) {
+            setDefaultPasswordPlain(data.userDefaultPasswordPlaintext);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch default password:', err);
+      }
+    };
+
     fetchRoles();
+    fetchDefaultPassword();
   }, [open]);
 
   if (!open) return null;
@@ -69,7 +98,23 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
       employeeId: form.employeeId.trim(),
       role: form.role,
     };
-    const password = 'hitech123';
+    let password = 'hitech123';
+    if (defaultPasswordPlain) {
+      password = defaultPasswordPlain;
+    } else if (defaultPassword) {
+      // If defaultPassword is a bcrypt hash, use customPassword if provided, else show error
+      if (defaultPassword.startsWith('$2a$') || defaultPassword.startsWith('$2b$') || defaultPassword.startsWith('$2y$')) {
+        if (customPassword) {
+          password = customPassword;
+        } else {
+          setMessage('❌ Please enter a password or set a default password in Portal Settings.');
+          setLoading(false);
+          return;
+        }
+      } else {
+        password = defaultPassword;
+      }
+    }
 
     try {
       // Check for duplicate email or employeeId
@@ -103,6 +148,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
       const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
       const newUser = userCredential.user;
 
+      console.log('requirePasswordChange value:', requirePasswordChange); // Debug log
       await setDoc(doc(db, 'users', newUser.uid), {
         uid: newUser.uid,
         name,
@@ -112,7 +158,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
         permissions: roleObj.permission,
         active: true,
         defaultPassword: true,
-        requirePasswordChange, // <-- add this field
+        requirePasswordChange: !!requirePasswordChange, // Ensure boolean
       });
 
       await secondarySignOut(secondaryAuth);
@@ -204,7 +250,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
             </label>
           </div>
 
-          <p className="text-xs text-gray-500">Default password is <code>'hitech123'</code></p>
+          <p className="text-xs text-gray-500">Default password is <code>{defaultPasswordPlain ? `'${defaultPasswordPlain}'` : defaultPassword && !(defaultPassword.startsWith('$2a$') || defaultPassword.startsWith('$2b$') || defaultPassword.startsWith('$2y$')) ? `'${defaultPassword}'` : customPassword ? `'${customPassword}'` : 'Set in Portal Settings (bcrypt hash)'}</code></p>
 
           {message && (
             <p

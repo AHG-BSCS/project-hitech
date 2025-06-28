@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import bcrypt from 'bcryptjs';
 
 function Section({ title, children }) {
   return (
@@ -67,43 +68,58 @@ const PortalSettings = () => {
   const [error, setError] = useState('');
   const [division, setDivision] = useState('');
   const [region, setRegion] = useState('');
+  const [schoolName, setSchoolName] = useState('');
+  const [schoolAddress, setSchoolAddress] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
+  const [principalName, setPrincipalName] = useState('');
+  const [district, setDistrict] = useState('');
   // Track if logo or bg was changed
   const [logoChanged, setLogoChanged] = useState(false);
   const [bgChanged, setBgChanged] = useState(false);
+  // Account Defaults
+  const [userDefaultPassword, setUserDefaultPassword] = useState('');
+  const [userDefaultPasswordPlain, setUserDefaultPasswordPlain] = useState('');
 
   const fetchSettings = async () => {
     const docRef = doc(db, 'system', 'settings');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setTitleBar(data.titleBar || '');
-        setColorPalette(data.colorPalette || '#2563eb');
-        setSchoolId(data.schoolId || '');
-        setLogoBase64(data.logoBase64 || '');
-        setLogoSvg(data.logoSvg || '');
-        setLogoMode(data.logoMode || 'school');
-        setDivision(data.division || '');
-        setRegion(data.region || '');
-        setLogoChanged(false);
-        setBgChanged(false);
-      }
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      setTitleBar(data.titleBar || '');
+      setColorPalette(data.colorPalette || '#2563eb');
+      setSchoolId(data.schoolId || '');
+      setLogoBase64(data.logoBase64 || '');
+      setLogoSvg(data.logoSvg || '');
+      setLogoMode(data.logoMode || 'school');
+      setDivision(data.division || '');
+      setRegion(data.region || '');
+      setSchoolName(data.schoolName || '');
+      setSchoolAddress(data.schoolAddress || '');
+      setContactNumber(data.contactNumber || '');
+      setPrincipalName(data.principalName || '');
+      setDistrict(data.district || '');
+      setUserDefaultPassword(data.userDefaultPassword || '');
+      setUserDefaultPasswordPlain(''); // never load plaintext from db
+      setLogoChanged(false);
+      setBgChanged(false);
+    }
 
-      // Fetch background settings from system/bgSettings
-      const bgSettingsRef = doc(db, 'system', 'bgSettings');
-      const bgSettingsSnap = await getDoc(bgSettingsRef);
-      if (bgSettingsSnap.exists()) {
-        const bgData = bgSettingsSnap.data();
-        setBgType(bgData.bgType || 'color');
-        setBgValue(bgData.bgValue || '#f3f4f6');
-      }
-      // If background is image, load from separate doc
-      if ((bgSettingsSnap.data()?.bgType || 'color') === 'image') {
-        const bgDocRef = doc(db, 'system', 'bgImage');
-        const bgDocSnap = await getDoc(bgDocRef);
-        setBgBase64(bgDocSnap.exists() ? bgDocSnap.data().bgBase64 || '' : '');
-      } else {
-        setBgBase64('');
-      }
+    // Fetch background settings from system/bgSettings
+    const bgSettingsRef = doc(db, 'system', 'bgSettings');
+    const bgSettingsSnap = await getDoc(bgSettingsRef);
+    if (bgSettingsSnap.exists()) {
+      const bgData = bgSettingsSnap.data();
+      setBgType(bgData.bgType || 'color');
+      setBgValue(bgData.bgValue || '#f3f4f6');
+    }
+    // If background is image, load from separate doc
+    if ((bgSettingsSnap.data()?.bgType || 'color') === 'image') {
+      const bgDocRef = doc(db, 'system', 'bgImage');
+      const bgDocSnap = await getDoc(bgDocRef);
+      setBgBase64(bgDocSnap.exists() ? bgDocSnap.data().bgBase64 || '' : '');
+    } else {
+      setBgBase64('');
+    }
   };
 
   useEffect(() => {
@@ -194,6 +210,13 @@ const PortalSettings = () => {
       bgValue: bgType === 'color' ? bgValue : '',
     });
     // Save other settings in system/settings (without bgType/bgValue/bgBase64)
+    let passwordToSave = userDefaultPassword;
+    let passwordPlainToSave = userDefaultPasswordPlain;
+    if (userDefaultPasswordPlain) {
+      // If user entered a new password, hash it
+      passwordToSave = await bcrypt.hash(userDefaultPasswordPlain, 10);
+      passwordPlainToSave = userDefaultPasswordPlain;
+    }
     await setDoc(doc(db, 'system', 'settings'), {
       titleBar,
       colorPalette,
@@ -203,38 +226,37 @@ const PortalSettings = () => {
       logoMode,
       division,
       region,
+      schoolName,
+      schoolAddress,
+      contactNumber,
+      principalName,
+      district,
+      userDefaultPassword: passwordToSave,
+      userDefaultPasswordPlaintext: passwordPlainToSave,
     }, { merge: true });
     setLoading(false);
     setSuccess(true);
     setLogoChanged(false);
     setBgChanged(false);
+    setUserDefaultPasswordPlain('');
     setTimeout(() => setSuccess(false), 2000);
     window.location.reload();
   };
 
   return (
     <div className="max-w-fill mx-auto">
-      <Section title="Portal Settings">
-        <form className="space-y-6 text-black" onSubmit={e => { e.preventDefault(); handleSave(); }}>
-          {/* Title Bar */}
+      {/* School Details Section */}
+      <Section title="School Details">
+        <form className="space-y-6 text-black" onSubmit={e => e.preventDefault()}>
+          {/* School Name */}
           <div>
-            <label className="block font-medium mb-1">System Title Bar</label>
+            <label className="block font-medium mb-1">School Name</label>
             <input
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={titleBar}
-              onChange={e => setTitleBar(e.target.value)}
-              placeholder="Enter system title bar text"
-            />
-          </div>
-          {/* Color Palette */}
-          <div>
-            <label className="block font-medium mb-1">Color Palette</label>
-            <input
-              type="color"
-              className="w-16 h-10 p-0 border border-gray-300 bg-white"
-              value={colorPalette}
-              onChange={e => setColorPalette(e.target.value)}
+              placeholder="Enter School Name"
+              value={schoolName}
+              onChange={e => setSchoolName(e.target.value)}
             />
           </div>
           {/* School ID */}
@@ -243,20 +265,64 @@ const PortalSettings = () => {
             <input
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Enter School ID"
               value={schoolId}
               onChange={e => setSchoolId(e.target.value)}
-              placeholder="Enter School ID"
             />
           </div>
-          {/* Division */}
+          {/* School Address */}
           <div>
-            <label className="block font-medium mb-1">Division</label>
+            <label className="block font-medium mb-1">School Address</label>
             <input
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Enter School Address"
+              value={schoolAddress}
+              onChange={e => setSchoolAddress(e.target.value)}
+            />
+          </div>
+          {/* Contact Number */}
+          <div>
+            <label className="block font-medium mb-1">Contact Number</label>
+            <input
+              type="text"
+              className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Enter Contact Number"
+              value={contactNumber}
+              onChange={e => setContactNumber(e.target.value)}
+            />
+          </div>
+          {/* Principal Name */}
+          <div>
+            <label className="block font-medium mb-1">Principal Name</label>
+            <input
+              type="text"
+              className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Enter Principal Name"
+              value={principalName}
+              onChange={e => setPrincipalName(e.target.value)}
+            />
+          </div>
+          {/* Division Office */}
+          <div>
+            <label className="block font-medium mb-1">Division Office</label>
+            <input
+              type="text"
+              className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Enter Division Office"
               value={division}
               onChange={e => setDivision(e.target.value)}
-              placeholder="Enter Division"
+            />
+          </div>
+          {/* District */}
+          <div>
+            <label className="block font-medium mb-1">District</label>
+            <input
+              type="text"
+              className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Enter District"
+              value={district || ''}
+              onChange={e => setDistrict(e.target.value)}
             />
           </div>
           {/* Region */}
@@ -265,9 +331,9 @@ const PortalSettings = () => {
             <input
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Enter Region"
               value={region}
               onChange={e => setRegion(e.target.value)}
-              placeholder="Enter Region"
             />
           </div>
           {/* School Logo */}
@@ -291,6 +357,48 @@ const PortalSettings = () => {
                 className="mt-2 h-16 rounded border"
               />
             )}
+          </div>
+        </form>
+      </Section>
+      {/* Account Defaults Section */}
+      <Section title="Account Defaults">
+        <form className="space-y-6 text-black" onSubmit={e => e.preventDefault()}>
+          <div>
+            <label className="block font-medium mb-1">User Default Password</label>
+            <input
+              type="text"
+              className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Enter default password for new users"
+              value={userDefaultPasswordPlain}
+              onChange={e => setUserDefaultPasswordPlain(e.target.value)}
+            />
+            <p className="text-xs text-gray-500 mt-1">This password will be assigned to new users in Manage Users. (Current hash: {userDefaultPassword ? 'Set' : 'Not set'})</p>
+          </div>
+        </form>
+      </Section>
+      {/* Portal Settings Section */}
+      <Section title="Portal Settings">
+        <form className="space-y-6 text-black" onSubmit={e => { e.preventDefault(); handleSave(); }}>
+          {/* Title Bar */}
+          <div>
+            <label className="block font-medium mb-1">System Title Bar</label>
+            <input
+              type="text"
+              className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              value={titleBar}
+              onChange={e => setTitleBar(e.target.value)}
+              placeholder="Enter system title bar text"
+            />
+          </div>
+          {/* Color Palette */}
+          <div>
+            <label className="block font-medium mb-1">Color Palette</label>
+            <input
+              type="color"
+              className="w-16 h-10 p-0 border border-gray-300 bg-white"
+              value={colorPalette}
+              onChange={e => setColorPalette(e.target.value)}
+            />
           </div>
           {/* Logo Display Mode */}
           <div>

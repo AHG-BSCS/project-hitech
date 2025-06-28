@@ -1,12 +1,24 @@
-import { signOut } from 'firebase/auth';
+import { useEffect, useState } from 'react';
+import { signOut, sendPasswordResetEmail, getAuth } from 'firebase/auth';
 import { auth } from '../firebase';
 
-export default function VerifyAccount({ show, onClose }) {
-  if (!show) return null;
+export default function VerifyAccount({ show, onClose, email }) {
+  const [emailSent, setEmailSent] = useState(false);
+  useEffect(() => {
+    if (show && email && !emailSent) {
+      const sendReset = async () => {
+        try {
+          await sendPasswordResetEmail(getAuth(), email);
+          setEmailSent(true);
+        } catch (err) {
+          // Optionally handle error
+        }
+      };
+      sendReset();
+    }
+  }, [show, email, emailSent]);
 
-  const handleOpenGmail = () => {
-    window.open('https://mail.google.com', '_blank');
-  };
+  if (!show) return null;
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -22,8 +34,10 @@ export default function VerifyAccount({ show, onClose }) {
         <p className="text-sm text-center mb-4 text-gray-700">
           Please check your email and reset your password. For your security, you can't continue with the default password.
         </p>
+        {emailSent && (
+          <p className="text-green-600 text-center mb-2">A password reset email has been sent to {email}.</p>
+        )}
         <div className="flex justify-center gap-4">
-          <button onClick={handleOpenGmail} className="btn btn-primary">Open Email</button>
           <button onClick={handleLogout} className="btn bg-error text-white btn-outline">Log Out</button>
         </div>
       </div>
