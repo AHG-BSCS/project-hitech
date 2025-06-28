@@ -3,6 +3,7 @@ import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 import RegisterStudent from '../modals/RegisterStudent';
+import { handleGenerateSF9WithAdviser } from '../utils/handleGenerateSF9WithAdviser';
 
 export default function ManageStudents({ permissions }) {
   const [students, setStudents] = useState([]);
@@ -191,6 +192,15 @@ export default function ManageStudents({ permissions }) {
                                 </button>
                               </>
                             )}
+                            <button
+                              className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                              onClick={async () => {
+                                await handleGenerateSF9WithAdviser(student);
+                                setActionStudentId(null);
+                              }}
+                            >
+                              Download SF9
+                            </button>
                             </div>
                         )}
                         </td>
