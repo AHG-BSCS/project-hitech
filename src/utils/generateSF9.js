@@ -9,7 +9,7 @@ import Docxtemplater from 'docxtemplater';
  */
 export async function generateSF9(student, classes) {
   // Fetch the template as ArrayBuffer
-  const response = await fetch('/public/docx/SF 9 Elem and JHS - Sample.docx');
+  const response = await fetch('/docx/SF 9 Elem and JHS - Sample.docx');
   const arrayBuffer = await response.arrayBuffer();
   const zip = new PizZip(arrayBuffer);
 
