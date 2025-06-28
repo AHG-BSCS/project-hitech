@@ -6,6 +6,7 @@ import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } 
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { useSystemSettings } from '../context/SystemSettingsContext';
 import VerifyAccount from '../modals/VerifyAccount';
+import ForcePasswordChange from '../components/ForcePasswordChange';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import depedLogo from '../img/logo_dpd.png';
 
@@ -50,6 +51,8 @@ export default function Login() {
   const fetchedOnce = useRef(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showLockedModal, setShowLockedModal] = useState(false);
+  const [showForcePasswordChange, setShowForcePasswordChange] = useState(false);
+  const [forcePasswordUser, setForcePasswordUser] = useState(null);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -82,18 +85,10 @@ export default function Login() {
       const userRef = doc(db, 'users', loggedInUser.uid);
       const userSnap = await getDoc(userRef);
 
-      if (userSnap.exists() && userSnap.data().defaultPassword === true) {
-        if (form.password !== 'hitech123') {
-          await updateDoc(doc(db, 'users', querySnapshot.docs[0].id), {
-            defaultPassword: false,
-          });
-          localStorage.setItem('employeeId', form.employeeId);
-          localStorage.setItem('isAuthenticated', 'true');
-          navigate('/home');
-        } else {
-          await sendPasswordResetEmail(auth, email);
-          setShowVerifyModal(true);
-        }
+      if (userSnap.exists() && userSnap.data().requirePasswordChange === true) {
+        setShowVerifyModal(true);
+        setLoading(false);
+        return;
       } else {
         localStorage.setItem('employeeId', form.employeeId);
         localStorage.setItem('isAuthenticated', 'true');
@@ -259,6 +254,17 @@ export default function Login() {
       </div>
       <VerifyAccount show={showVerifyModal} onClose={() => setShowVerifyModal(false)} />
       <LockedModal open={showLockedModal} onClose={() => setShowLockedModal(false)} />
+      {showForcePasswordChange && (
+        <ForcePasswordChange
+          user={forcePasswordUser}
+          onPasswordChanged={() => {
+            setShowForcePasswordChange(false);
+            localStorage.setItem('employeeId', form.employeeId);
+            localStorage.setItem('isAuthenticated', 'true');
+            navigate('/home');
+          }}
+        />
+      )}
     </div>
   );
 }

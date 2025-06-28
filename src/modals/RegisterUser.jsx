@@ -112,6 +112,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
         permissions: roleObj.permission,
         active: true,
         defaultPassword: true,
+        requirePasswordChange, // <-- add this field
       });
 
       await secondarySignOut(secondaryAuth);
@@ -189,6 +190,18 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="inline-flex items-center mt-2">
+              <input
+                type="checkbox"
+                className="form-checkbox"
+                checked={requirePasswordChange}
+                onChange={e => setRequirePasswordChange(e.target.checked)}
+              />
+              <span className="ml-2 text-sm text-gray-700">Require user to change password on first login</span>
+            </label>
           </div>
 
           <p className="text-xs text-gray-500">Default password is <code>'hitech123'</code></p>
