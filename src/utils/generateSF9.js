@@ -1,5 +1,24 @@
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
+import ImageModule from 'docxtemplater-image-module-free';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
+
+/**
+ * Fetches the system/settings document from Firestore.
+ * @returns {Promise<Object>} The settings object, or an empty object if not found.
+ */
+export async function getSystemSettings() {
+  try {
+    const settingsDoc = await getDoc(doc(db, 'system', 'settings'));
+    if (settingsDoc.exists()) {
+      return settingsDoc.data();
+    }
+  } catch (e) {
+    console.error('Failed to fetch system settings:', e);
+  }
+  return {};
+}
 
 /**
  * Generates an SF9 DOCX file for a student using the SF9_Template.docx template.
@@ -31,6 +50,7 @@ export async function generateSF9(student, classes) {
   // Remove email and parentheses, then make uppercase
   adviser = adviser.replace(/\([^)]*\)/g, '').replace(/\S+@\S+\.\S+/, '').trim().toUpperCase();
 
+  const settings = await getSystemSettings();  
   const data = {
     firstName: student.firstName || '',
     middleName: student.middleName || '',
@@ -43,12 +63,42 @@ export async function generateSF9(student, classes) {
     schoolYear: student.schoolYear || '',
     gradeLevel: student.gradeLevel || '',
     adviser: adviser,
-    // di pa nagana tinatamad na ko aa bukas na yan
+    principalName: settings.principalName || '',
+    division: (settings.division || '').toUpperCase(),
+    region: (settings.region || '').toUpperCase(),
+    district: (settings.district || '').toUpperCase(),
+    schoolName: (settings.schoolName || '').toUpperCase(),
+    logoBase64: settings.logoBase64 || '',
+
     // className: classes?.sectionName || '',
   };
 
-  // Use docxtemplater to fill the template
-  const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+  // Image module options
+  const imageOpts = {
+    centered: false,
+    getImage: function(tagValue) {
+      if (!tagValue) return null;
+      const base64 = tagValue.split(',')[1] || tagValue;
+      // Convert base64 to Uint8Array for browser compatibility
+      const binaryString = atob(base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes;
+    },
+    getSize: function() {
+      return [50, 50]; // width, height in px (fixed size)
+    }
+  };
+  const imageModule = new ImageModule(imageOpts);
+
+  const doc = new Docxtemplater(zip, {
+    modules: [imageModule],
+    paragraphLoop: true,
+    linebreaks: true
+  });
   doc.setData(data);
   try {
     doc.render();
