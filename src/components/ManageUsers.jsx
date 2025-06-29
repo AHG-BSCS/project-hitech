@@ -114,6 +114,7 @@ export default function ManageUsers({ permissions }) {
   const [unlockUser, setUnlockUser] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [editUser, setEditUser] = useState(null); // NEW: for editing
 
   useEffect(() => {
     fetchUser();
@@ -225,7 +226,7 @@ export default function ManageUsers({ permissions }) {
     <div>
       <Section title="Manage Users">
         <button
-          onClick={() => setShowRegisterUserModal(true)}
+          onClick={() => { setShowRegisterUserModal(true); setEditUser(null); }}
           className="btn bg-blue-600 text-white"
         >
           Add User
@@ -294,6 +295,12 @@ export default function ManageUsers({ permissions }) {
                             ref={dropdownRef}
                             className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-40 bg-white border rounded shadow-md z-10`}
                           >
+                            <button
+                              onClick={() => { setShowRegisterUserModal(true); setEditUser(user); setActionUserId(null); }}
+                              className="block w-full px-4 py-2 text-left hover:bg-blue-100"
+                            >
+                              Edit
+                            </button>
                             {user.active === false ? (
                               <button
                                 onClick={() => handleMakeActive(user.id)}
@@ -343,8 +350,9 @@ export default function ManageUsers({ permissions }) {
       {showRegisterUserModal && (
         <RegisterUser
           open={showRegisterUserModal}
-          onClose={() => setShowRegisterUserModal(false)}
+          onClose={() => { setShowRegisterUserModal(false); setEditUser(null); }}
           refreshUsers={fetchUser}
+          editUser={editUser} // NEW: pass user for editing
         />
       )}
       <ResetPasswordModal

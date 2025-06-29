@@ -15,7 +15,7 @@ import {
 } from 'firebase/firestore';
 import bcrypt from 'bcryptjs';
 
-export default function RegisterUser({ open, onClose, refreshUsers }) {
+export default function RegisterUser({ open, onClose, refreshUsers, editUser }) {
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -34,11 +34,20 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
   useEffect(() => {
     if (!open) return;
 
-    // Reset form and requirePasswordChange state on open
-    setForm({ name: '', email: '', employeeId: '', role: '' });
-    setRequirePasswordChange(true);
-    setCustomPassword('');
-    setMessage('');
+    if (editUser) {
+      setForm({
+        name: editUser.name || '',
+        email: editUser.email || '',
+        employeeId: editUser.employeeId || '',
+        role: editUser.role || '',
+      });
+      setMessage('');
+    } else {
+      setForm({ name: '', email: '', employeeId: '', role: '' });
+      setRequirePasswordChange(true);
+      setCustomPassword('');
+      setMessage('');
+    }
 
     const fetchRoles = async () => {
       try {
@@ -77,8 +86,8 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
     };
 
     fetchRoles();
-    fetchDefaultPassword();
-  }, [open]);
+    if (!editUser) fetchDefaultPassword();
+  }, [open, editUser]);
 
   if (!open) return null;
 
@@ -87,7 +96,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
     setMessage('');
   };
 
-  const handleRegister = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
@@ -98,76 +107,93 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
       employeeId: form.employeeId.trim(),
       role: form.role,
     };
-    let password = 'hitech123';
-    if (defaultPasswordPlain) {
-      password = defaultPasswordPlain;
-    } else if (defaultPassword) {
-      // If defaultPassword is a bcrypt hash, use customPassword if provided, else show error
-      if (defaultPassword.startsWith('$2a$') || defaultPassword.startsWith('$2b$') || defaultPassword.startsWith('$2y$')) {
-        if (customPassword) {
-          password = customPassword;
-        } else {
-          setMessage('❌ Please enter a password or set a default password in Portal Settings.');
+
+    try {
+      if (editUser) {
+        // Update user
+        const roleObj = roles.find(r => r.name === role);
+        if (!roleObj) throw new Error('Selected role is invalid');
+        await setDoc(doc(db, 'users', editUser.id), {
+          ...editUser,
+          name,
+          email,
+          employeeId,
+          role: roleObj.name,
+          permissions: roleObj.permission,
+        }, { merge: true });
+        setMessage('✅ User updated successfully!');
+        if (typeof refreshUsers === 'function') refreshUsers();
+      } else {
+        let password = 'hitech123';
+        if (defaultPasswordPlain) {
+          password = defaultPasswordPlain;
+        } else if (defaultPassword) {
+          // If defaultPassword is a bcrypt hash, use customPassword if provided, else show error
+          if (defaultPassword.startsWith('$2a$') || defaultPassword.startsWith('$2b$') || defaultPassword.startsWith('$2y$')) {
+            if (customPassword) {
+              password = customPassword;
+            } else {
+              setMessage('❌ Please enter a password or set a default password in Portal Settings.');
+              setLoading(false);
+              return;
+            }
+          } else {
+            password = defaultPassword;
+          }
+        }
+
+        // Check for duplicate email or employeeId
+        const usersRef = collection(db, 'users');
+        const snapshot = await getDocs(usersRef);
+        let emailExists = false;
+        let employeeIdExists = false;
+        snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          if (data.email === email) emailExists = true;
+          if (data.employeeId === employeeId) employeeIdExists = true;
+        });
+        if (emailExists || employeeIdExists) {
+          let msg = '❌ ';
+          if (emailExists && employeeIdExists) {
+            msg += 'Email and Employee ID already exist.';
+          } else if (emailExists) {
+            msg += 'Email already exists.';
+          } else {
+            msg += 'Employee ID already exists.';
+          }
+          setMessage(msg);
           setLoading(false);
           return;
         }
-      } else {
-        password = defaultPassword;
-      }
-    }
 
-    try {
-      // Check for duplicate email or employeeId
-      const usersRef = collection(db, 'users');
-      const snapshot = await getDocs(usersRef);
-      let emailExists = false;
-      let employeeIdExists = false;
-      snapshot.docs.forEach(doc => {
-        const data = doc.data();
-        if (data.email === email) emailExists = true;
-        if (data.employeeId === employeeId) employeeIdExists = true;
-      });
-      if (emailExists || employeeIdExists) {
-        let msg = '❌ ';
-        if (emailExists && employeeIdExists) {
-          msg += 'Email and Employee ID already exist.';
-        } else if (emailExists) {
-          msg += 'Email already exists.';
-        } else {
-          msg += 'Employee ID already exists.';
+        const roleObj = roles.find(r => r.name === role);
+        if (!roleObj) throw new Error('Selected role is invalid');
+
+        const secondaryAuth = getAuth(temp);
+        const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+        const newUser = userCredential.user;
+
+        console.log('requirePasswordChange value:', requirePasswordChange); // Debug log
+        await setDoc(doc(db, 'users', newUser.uid), {
+          uid: newUser.uid,
+          name,
+          email,
+          employeeId,
+          role: roleObj.name,
+          permissions: roleObj.permission,
+          active: true,
+          defaultPassword: true,
+          requirePasswordChange: !!requirePasswordChange, // Ensure boolean
+        });
+
+        await secondarySignOut(secondaryAuth);
+
+        setForm({ name: '', email: '', employeeId: '', role: '' });
+        setMessage(`✅ User added successfully!`);
+
+        if (typeof refreshUsers === 'function') {
+          refreshUsers();
         }
-        setMessage(msg);
-        setLoading(false);
-        return;
-      }
-
-      const roleObj = roles.find(r => r.name === role);
-      if (!roleObj) throw new Error('Selected role is invalid');
-
-      const secondaryAuth = getAuth(temp);
-      const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-      const newUser = userCredential.user;
-
-      console.log('requirePasswordChange value:', requirePasswordChange); // Debug log
-      await setDoc(doc(db, 'users', newUser.uid), {
-        uid: newUser.uid,
-        name,
-        email,
-        employeeId,
-        role: roleObj.name,
-        permissions: roleObj.permission,
-        active: true,
-        defaultPassword: true,
-        requirePasswordChange: !!requirePasswordChange, // Ensure boolean
-      });
-
-      await secondarySignOut(secondaryAuth);
-
-      setForm({ name: '', email: '', employeeId: '', role: '' });
-      setMessage(`✅ User added successfully!`);
-
-      if (typeof refreshUsers === 'function') {
-        refreshUsers();
       }
     } catch (err) {
       console.error('Registration failed:', err);
@@ -181,8 +207,8 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
     <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
       {/* Prevent outside click from closing the modal */}
       <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold text-black mb-4 text-center">Add New User</h2>
-        <form onSubmit={handleRegister} className="space-y-4">
+        <h2 className="text-lg font-bold text-black mb-4 text-center">{editUser ? 'Edit User' : 'Add New User'}</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-800 mb-1">Full Name</label>
             <input
@@ -204,6 +230,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
               value={form.employeeId}
               onChange={handleChange}
               required
+              disabled={!!editUser}
             />
           </div>
 
@@ -217,6 +244,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
               value={form.email}
               onChange={handleChange}
               required
+              disabled={!!editUser}
             />
           </div>
 
@@ -238,19 +266,23 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
             </select>
           </div>
 
-          <div>
-            <label className="inline-flex items-center mt-2">
-              <input
-                type="checkbox"
-                className="form-checkbox"
-                checked={requirePasswordChange}
-                onChange={e => setRequirePasswordChange(e.target.checked)}
-              />
-              <span className="ml-2 text-sm text-gray-700">Require user to change password on first login</span>
-            </label>
-          </div>
-
-          <p className="text-xs text-gray-500">Default password is <code>{defaultPasswordPlain ? `'${defaultPasswordPlain}'` : defaultPassword && !(defaultPassword.startsWith('$2a$') || defaultPassword.startsWith('$2b$') || defaultPassword.startsWith('$2y$')) ? `'${defaultPassword}'` : customPassword ? `'${customPassword}'` : 'Set in Portal Settings (bcrypt hash)'}</code></p>
+          {/* Only show password/checkbox if not editing */}
+          {!editUser && (
+            <>
+              <div>
+                <label className="inline-flex items-center mt-2">
+                  <input
+                    type="checkbox"
+                    className="form-checkbox"
+                    checked={requirePasswordChange}
+                    onChange={e => setRequirePasswordChange(e.target.checked)}
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Require user to change password on first login</span>
+                </label>
+              </div>
+              <p className="text-xs text-gray-500">Default password is <code>{defaultPasswordPlain ? `'${defaultPasswordPlain}'` : defaultPassword && !(defaultPassword.startsWith('$2a$') || defaultPassword.startsWith('$2b$') || defaultPassword.startsWith('$2y$')) ? `'${defaultPassword}'` : customPassword ? `'${customPassword}'` : 'Set in Portal Settings (bcrypt hash)'}</code></p>
+            </>
+          )}
 
           {message && (
             <p
@@ -276,7 +308,7 @@ export default function RegisterUser({ open, onClose, refreshUsers }) {
               type="submit"
               className="btn bg-blue-500 hover:bg-blue-600 text-white"
             >
-              {loading ? 'Adding...' : 'Add'}
+              {loading ? (editUser ? 'Saving...' : 'Adding...') : (editUser ? 'Save' : 'Add')}
             </button>
           </div>
         </form>
