@@ -5,7 +5,6 @@ import { updateDoc } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { useSystemSettings } from '../context/SystemSettingsContext';
-import VerifyAccount from '../modals/VerifyAccount';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import depedLogo from '../img/logo_dpd.png';
 
@@ -48,8 +47,6 @@ export default function Login() {
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [fetching, setFetching] = useState(false);
   const fetchedOnce = useRef(false);
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
-  const [verifyEmail, setVerifyEmail] = useState("");
   const [showLockedModal, setShowLockedModal] = useState(false);
 
   const handleChange = (e) => {
@@ -73,59 +70,68 @@ export default function Login() {
   
       const userDoc = querySnapshot.docs[0];
       const userData = userDoc.data();
-      const email = userData.email;
-      const auth = getAuth();
-  
+      
       if (userData.isLocked) {
         setShowLockedModal(true);
         setLoading(false);
         return;
       }
+      
+      const auth = getAuth();
+      const email = userData.email;
+      const pass = form.password;
+      form.password = '';
+
+      await signInWithEmailAndPassword(auth, email, pass);
   
       const settingsDoc = await getDoc(doc(db, 'system', 'settings'));
-      const defaultPassword = settingsDoc.exists() ? settingsDoc.data().userDefaultPasswordPlaintext : null;
+      const defaultPasswordPlainText = settingsDoc.exists() ? settingsDoc.data().userDefaultPasswordPlaintext : null;
   
-      if (defaultPassword && form.password === defaultPassword) {
-        try {
-          await updateDoc(doc(db, 'users', userDoc.id), { requirePasswordChange: true });
-        } catch (err) {
-          console.error('Failed to update requirePasswordChange to true:', err);
+      if (defaultPasswordPlainText) {
+        if (pass === defaultPasswordPlainText ) {
+          if (userData.defaultPassword) {
+            if (userData.requirePasswordChange) {
+              try {
+                await sendPasswordResetEmail(auth, email);
+                setErrorMsg('Your password is the default. A password reset email has been sent. Please reset your password to continue.');
+              } catch (err) {
+                setErrorMsg('Failed to send password reset email. Please contact your administrator.');
+              }
+        
+              setLoading(false);
+              return;
+            }
+            else {
+              try {
+                await updateDoc(doc(db, 'users', userDoc.id), { defaultPassword: false });
+              } catch (err) {
+                console.error('Failed to update defaultPassword and requirePasswordChange to false:', err);
+              }
+            }
+          }
         }
-  
-        try {
-          await sendPasswordResetEmail(auth, email);
-          setErrorMsg('Your password is the default. A password reset email has been sent. Please reset your password to continue.');
-        } catch (err) {
-          setErrorMsg('Failed to send password reset email. Please contact your administrator.');
+        else {
+          if (userData.defaultPassword) {
+            try {
+              await updateDoc(doc(db, 'users', userDoc.id), { defaultPassword: false });
+              await updateDoc(doc(db, 'users', userDoc.id), { requirePasswordChange: false });
+            } catch (err) {
+              console.error('Failed to update defaultPassword and requirePasswordChange to false:', err);
+            }
+          }
         }
-  
-        setLoading(false);
-        return;
       }
-  
-      try {
-        await updateDoc(doc(db, 'users', userDoc.id), { requirePasswordChange: false });
-      } catch (err) {
-        console.error('Failed to update requirePasswordChange to false:', err);
-      }
-  
-      await signInWithEmailAndPassword(auth, email, form.password);
-  
+    
       const loggedInUser = auth.currentUser;
       const userRef = doc(db, 'users', loggedInUser.uid);
       const userSnap = await getDoc(userRef);
-  
-      if (userSnap.exists() && userSnap.data().requirePasswordChange === true) {
-        setShowVerifyModal(true);
-        setVerifyEmail(email);
-        setLoading(false);
+
+      if (userSnap.exists() && !userSnap.data().requirePasswordChange && !userSnap.data().defaultPassword) {
+        localStorage.setItem('employeeId', form.employeeId);
+        localStorage.setItem('isAuthenticated', 'true');
+        navigate('/home');
         return;
       }
-  
-      localStorage.setItem('employeeId', form.employeeId);
-      localStorage.setItem('isAuthenticated', 'true');
-      navigate('/home');
-  
     } catch (error) {
       console.error(error);
       setErrorMsg('Invalid credentials.');
@@ -284,7 +290,6 @@ export default function Login() {
           </div>
         </form>
       </div>
-      <VerifyAccount show={showVerifyModal} onClose={() => setShowVerifyModal(false)} email={verifyEmail} />
       <LockedModal open={showLockedModal} onClose={() => setShowLockedModal(false)} />
     </div>
   );
