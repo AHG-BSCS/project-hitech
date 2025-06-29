@@ -49,16 +49,9 @@ export default function ManageGrades({ permissions }) {
 
   useEffect(() => {
     const employeeId = localStorage.getItem('employeeId') || '';
-    console.log('Current Employee ID:', employeeId);
-  
-    // Find the subject assignment where teacherEmployeeId matches employeeId
     const assignment = subjectAssignments.find(sa => sa.teacherEmployeeId === employeeId);
     if (assignment) {
-      // assignment.id is the document id of the subjectAssignment, maybe related to the subject or teacher
-      // If you want the user doc id associated, maybe you have a userId or teacherId field inside the assignment
-  
-      // Example: if you store teacherId (user document id) in assignment
-      setCurrentUserId(assignment.teacherId || ''); // Or whichever field you have for userId
+      setCurrentUserId(assignment.teacherId || '');
     } else {
       setCurrentUserId('');
     }
@@ -68,23 +61,18 @@ export default function ManageGrades({ permissions }) {
 
   const filteredSubjectAssignments = subjectAssignments.filter(sa => sa.teacherId === currentUserId);
 
-  // Only show classes that have at least one assigned subject
   const classesWithSubjects = classes.filter(cls =>
     filteredSubjectAssignments.some(sa => sa.classId === cls.id)
   );
   
-  // Helper to get subjects for a class
   const getSubjectAssignmentsForClass = (classId) =>
     filteredSubjectAssignments.filter(sa => sa.classId === classId);
   
-  // Helper to get students for a class
   const getStudentsForClass = (classId) =>
     students.filter(stu => {
-      // Support both string and array for classId in student object
       if (Array.isArray(stu.classId)) {
         return stu.classId.includes(classId);
       }
-      // Try common alternative field names if needed
       if (stu.class_id && Array.isArray(stu.class_id)) {
         return stu.class_id.includes(classId);
       }
@@ -94,11 +82,9 @@ export default function ManageGrades({ permissions }) {
       return stu.classId === classId;
     });
 
-  // Helper to get teacher name
   const getTeacherName = (teacherId) =>
     users.find(u => u.id === teacherId)?.name || '-';
 
-  // Fetch grades for a subject/class
   const fetchGrades = async (classId, subjectId) => {
     const gradesSnap = await getDocs(collection(db, 'grades'));
     const gradeData = {};
@@ -114,7 +100,6 @@ export default function ManageGrades({ permissions }) {
     setFinalized(prev => ({ ...prev, [`${classId}_${subjectId}`]: isFinal }));
   };
 
-  // Handle grade input change
   const handleGradeChange = (classId, subjectId, studentId, value) => {
     setGrades(prev => ({
       ...prev,
@@ -125,7 +110,6 @@ export default function ManageGrades({ permissions }) {
     }));
   };
 
-  // Helper: validate all grades are present and valid (0-100)
   function areGradesValid(gradeEntries, students) {
     if (!students.length) return false;
     for (const stu of students) {
@@ -137,7 +121,6 @@ export default function ManageGrades({ permissions }) {
     return true;
   }
 
-  // Helper: for drafts, allow blanks but if filled, must be valid (0-100)
   function areDraftGradesValid(gradeEntries, students) {
     if (!students.length) return false;
     for (const stu of students) {
@@ -149,7 +132,6 @@ export default function ManageGrades({ permissions }) {
     return true;
   }
 
-  // Save grades as draft (not final)
   const handleSaveDraft = async (classId, subjectId) => {
     const key = `${classId}_${subjectId}`;
     const gradeEntries = grades[key] || {};
@@ -172,7 +154,6 @@ export default function ManageGrades({ permissions }) {
     setModal({ open: true, message: 'Draft saved!', type: 'success' });
   };
 
-  // Save grades as final (not editable)
   const handleSaveGrades = async (classId, subjectId) => {
     const key = `${classId}_${subjectId}`;
     const gradeEntries = grades[key] || {};
@@ -197,7 +178,6 @@ export default function ManageGrades({ permissions }) {
     setModal({ open: true, message: 'Grades finalized!', type: 'success' });
   };
 
-  // Permission helpers
   const canManage = hasPermission(permissions, PERMISSIONS.MANAGE_GRADES);
   const canView = hasPermission(permissions, PERMISSIONS.ENCODE_GRADES);
   if (!canManage && !canView) {
@@ -208,7 +188,6 @@ export default function ManageGrades({ permissions }) {
     );
   }
 
-  // Helper to get grade tag
   function getGradeTag(grade) {
     if (grade === '' || grade === undefined || grade === null) return '';
     const num = Number(grade);
@@ -218,8 +197,7 @@ export default function ManageGrades({ permissions }) {
     if (num >= 80 && num <= 84) return 'Satisfactory';
     if (num >= 75 && num <= 78) return 'Fairly Satisfactory';
     if (num < 75) return 'Failed';
-    if (num < 0 || num > 100) return 'Invalid'; // Handle impossible grades
-    // Default case for unexpected values
+    if (num < 0 || num > 100) return 'Invalid';
     return '';
   }
 
@@ -374,8 +352,8 @@ export default function ManageGrades({ permissions }) {
                 {showConfirm[key] && (
                   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                     <div className="bg-white p-6 rounded shadow-lg">
-                      <h3 className="text-lg font-bold mb-2">Confirm Finalization</h3>
-                      <p>Are you sure you want to finalize these grades? This action <strong>CANNOT</strong> be undone.</p>
+                      <h3 className="text-lg text-black font-bold mb-2">Confirm Finalization</h3>
+                      <p className='text-black'>Are you sure you want to finalize these grades? This action <strong>CANNOT</strong> be undone.</p>
                       <div className="flex gap-4 mt-4">
                         <button className="btn bg-green-600 text-white" onClick={() => handleSaveGrades(cls.id, sa.subjectId)}>Yes, Finalize</button>
                         <button className="btn bg-gray-400 text-black" onClick={() => setShowConfirm(prev => ({ ...prev, [key]: false }))}>Cancel</button>
