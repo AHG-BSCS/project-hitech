@@ -5,7 +5,6 @@ import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 
 export default function ManageSubjects({ permissions }) {
   const [subjects, setSubjects] = useState([]);
-  const [classes, setClasses] = useState([]);
   const [users, setUsers] = useState([]);
   const [searchSubject, setSearchSubject] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -17,27 +16,18 @@ export default function ManageSubjects({ permissions }) {
   const dropdownRef = useRef(null); // NEW: ref for dropdown
   const [currentUserId, setCurrentUserId] = useState('');
   const [currentUserEmail, setCurrentUserEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Modal form state
   const [subjectName, setSubjectName] = useState('');
-  const [selectedTeacher, setSelectedTeacher] = useState('');
-  const [selectedClass, setSelectedClass] = useState('');
 
   useEffect(() => {
     const fetchSubjects = async () => {
       const snapshot = await getDocs(collection(db, 'subjects'));
-      setSubjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), status: doc.data().status || 'active' })));
+      setSubjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
     fetchSubjects();
   }, [refresh]);
-
-  useEffect(() => {
-    const fetchClasses = async () => {
-      const snapshot = await getDocs(collection(db, 'classes'));
-      setClasses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    };
-    fetchClasses();
-  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -65,42 +55,26 @@ export default function ManageSubjects({ permissions }) {
   const handleEdit = (subject) => {
     setEditData(subject);
     setSubjectName(subject.name);
-    setSelectedTeacher(subject.teacherId);
-    setSelectedClass(subject.classId);
     setShowModal(true);
-  };
-
-  const handleToggleStatus = async (subject) => {
-    const subjectRef = doc(db, 'subjects', subject.id);
-    const newStatus = subject.status === 'archived' ? 'active' : 'archived';
-    await updateDoc(subjectRef, { status: newStatus });
-    setRefresh(r => !r);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!subjectName || !selectedTeacher || !selectedClass) return;
+    if (!subjectName) return;
     if (editData) {
       // Update
       await updateDoc(doc(db, 'subjects', editData.id), {
         name: subjectName,
-        teacherId: selectedTeacher,
-        classId: selectedClass,
       });
     } else {
       // Add
       await addDoc(collection(db, 'subjects'), {
         name: subjectName,
-        teacherId: selectedTeacher,
-        classId: selectedClass,
-        status: 'active',
       });
     }
     setShowModal(false);
     setEditData(null);
     setSubjectName('');
-    setSelectedTeacher('');
-    setSelectedClass('');
     setRefresh(r => !r);
   };
 
@@ -164,8 +138,6 @@ export default function ManageSubjects({ permissions }) {
             onClick={() => {
               setEditData(null);
               setSubjectName('');
-              setSelectedTeacher('');
-              setSelectedClass('');
               setShowModal(true);
             }}
           >
@@ -178,7 +150,7 @@ export default function ManageSubjects({ permissions }) {
         <div className="w-full flex flex-col space-y-4">
           <input
             type="text"
-            placeholder="Search by Subject, Teacher, or Class"
+            placeholder="Search by Subject Name"
             className="input input-bordered w-full bg-white border border-gray-300 text-black"
             value={searchSubject}
             onChange={(e) => setSearchSubject(e.target.value)}
@@ -189,37 +161,20 @@ export default function ManageSubjects({ permissions }) {
               <thead className="bg-gray-100 text-black sticky top-0 z-10">
                 <tr>
                   <th>Subject Name</th>
-                  <th>Teacher</th>
-                  <th>Class</th>
-                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredSubjects
-                  .filter(subj => subj.status !== 'archived')
                   .filter(subj => {
-                    const teacher = users.find(u => u.id === subj.teacherId)?.name || '';
-                    const className = classes.find(c => c.id === subj.classId)?.sectionName || '';
                     return (
-                      subj.name?.toLowerCase().includes(searchSubject.toLowerCase()) ||
-                      teacher.toLowerCase().includes(searchSubject.toLowerCase()) ||
-                      className.toLowerCase().includes(searchSubject.toLowerCase())
+                      subj.name?.toLowerCase().includes(searchSubject.toLowerCase())
                     );
                   })
                   .map(subj => {
-                    const teacher = users.find(u => u.id === subj.teacherId)?.name || '-';
-                    const className = classes.find(c => c.id === subj.classId)?.sectionName || '-';
                     return (
                       <tr key={subj.id} className={`${actionSubjectId === subj.id ? 'bg-blue-200 text-black' : 'hover:bg-blue-100 hover:text-black'}`}>
                         <td>{subj.name}</td>
-                        <td>{teacher}</td>
-                        <td>{className}</td>
-                        <td>
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${subj.status === 'archived' ? 'bg-gray-400 text-white' : 'bg-green-500 text-white'}`}>
-                            {subj.status === 'archived' ? 'Archived' : 'Active'}
-                          </span>
-                        </td>
                         <td className="relative">
                           <button
                             ref={el => (buttonRefs.current[subj.id] = el)}
@@ -247,12 +202,6 @@ export default function ManageSubjects({ permissions }) {
                                   >
                                     Delete
                                   </button>
-                                  <button
-                                    onClick={() => { handleToggleStatus(subj); setActionSubjectId(null); }}
-                                    className={`block w-full px-4 py-2 text-left ${subj.status === 'archived' ? 'text-green-700 hover:bg-green-100' : 'text-gray-700 hover:bg-gray-100'}`}
-                                  >
-                                    {subj.status === 'archived' ? 'Mark as Active' : 'Archive'}
-                                  </button>
                                 </>
                               )}
                             </div>
@@ -267,54 +216,14 @@ export default function ManageSubjects({ permissions }) {
         </div>
       </Section>
 
-      {/* Archived Subjects Section */}
-      <Section title="Archived Subjects">
-        {Object.entries(
-          filteredSubjects.filter(subj => subj.status === 'archived')
-            .reduce((acc, subj) => {
-              const className = classes.find(c => c.id === subj.classId)?.sectionName || 'Unknown Class';
-              if (!acc[className]) acc[className] = [];
-              acc[className].push(subj);
-              return acc;
-            }, {})
-        ).length === 0 ? (
-          <div className="text-gray-500">No archived subjects.</div>
-        ) : (
-          Object.entries(
-            filteredSubjects.filter(subj => subj.status === 'archived')
-              .reduce((acc, subj) => {
-                const className = classes.find(c => c.id === subj.classId)?.sectionName || 'Unknown Class';
-                if (!acc[className]) acc[className] = [];
-                acc[className].push(subj);
-                return acc;
-              }, {})
-          ).map(([className, archivedSubjects]) => (
-            <div key={className} className="mb-6">
-              <h3 className="font-bold text-md mb-2">{className}</h3>
-              <div className="flex flex-wrap gap-2">
-                {archivedSubjects.map(subj => (
-                  <div
-                    key={subj.id}
-                    className="px-4 py-2 rounded bg-gray-200 text-black shadow text-sm flex items-center gap-2"
-                  >
-                    <span className="font-semibold">{subj.name}</span>
-                    <span className="text-xs text-gray-600">({users.find(u => u.id === subj.teacherId)?.name || '-'})</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
-      </Section>
-
       {/* Add/Edit Subject Modal */}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">{editData ? 'Edit Subject' : 'Add Subject'}</h3>
+            <h3 className="text-lg text-black font-bold mb-4">{editData ? 'Edit Subject' : 'Add Subject'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
-                <label className="block mb-1 font-semibold">Subject Name</label>
+                <label className="block mb-1 text-black font-semibold">Subject Name</label>
                 <input
                   type="text"
                   className="input input-bordered w-full bg-white border border-gray-300 text-black"
@@ -323,47 +232,23 @@ export default function ManageSubjects({ permissions }) {
                   required
                 />
               </div>
-              <div className="mb-4">
-                <label className="block mb-1 font-semibold">Assign Teacher</label>
-                <select
-                  className="input input-bordered w-full bg-white border border-gray-300 text-black"
-                  value={selectedTeacher}
-                  onChange={e => setSelectedTeacher(e.target.value)}
-                  required
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => { setShowModal(false); setEditData(null); }}
+                  className="btn bg-gray-300 hover:bg-gray-400 text-black"
+                  disabled={loading}
                 >
-                  <option value="">Select Teacher</option>
-                  {users.map(user => (
-                    <option key={user.id} value={user.id}>{user.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-1 font-semibold">Assign to Class</label>
-                <select
-                  className="input input-bordered w-full bg-white border border-gray-300 text-black"
-                  value={selectedClass}
-                  onChange={e => setSelectedClass(e.target.value)}
-                  required
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  className="btn bg-blue-500 hover:bg-blue-600 text-white"
+                  disabled={loading}
                 >
-                  <option value="">Select Class</option>
-                  {classes.map(cls => (
-                    <option key={cls.id} value={cls.id}>{cls.sectionName}</option>
-                  ))}
-                </select>
+                  {loading ? (editData ? 'Saving...' : 'Adding...') : (editData ? 'Update' : 'Add')}
+                </button>
               </div>
-              <button
-                type="submit"
-                className="mt-4 btn bg-blue-600 text-white w-full"
-              >
-                {editData ? 'Update Subject' : 'Add Subject'}
-              </button>
-              <button
-                type="button"
-                className="mt-2 btn bg-gray-400 text-white w-full"
-                onClick={() => { setShowModal(false); setEditData(null); }}
-              >
-                Cancel
-              </button>
             </form>
           </div>
         </div>

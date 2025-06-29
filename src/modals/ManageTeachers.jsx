@@ -7,9 +7,10 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  getDoc,
 } from 'firebase/firestore';
 
-export default function ManageTeachersModal({ open, onClose, gradeLevel, sectionName, schoolYear }) {
+export default function ManageTeachersModal({ open, onClose, classId }) {
   const [subjects, setSubjects] = useState([]);
   const [allSubjects, setAllSubjects] = useState([]);
   const [users, setUsers] = useState([]);
@@ -20,9 +21,10 @@ export default function ManageTeachersModal({ open, onClose, gradeLevel, section
   const [searchResults, setSearchResults] = useState({});
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [removedSubjectIds, setRemovedSubjectIds] = useState([]);
+  const [classMeta, setClassMeta] = useState(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !classId) return;
   
     const initialize = async () => {
       setSubjects([]);
@@ -30,25 +32,41 @@ export default function ManageTeachersModal({ open, onClose, gradeLevel, section
       setMessage('');
       setSearchQueries({});
       setSearchResults({});
-      
-      const subjectsSnap = await getDocs(collection(db, 'subjects'));
-      const subjectsList = subjectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAllSubjects(subjectsList);
+      setRemovedSubjectIds([]);
+      setSelectedSubjectId('');
+      setClassMeta(null); // Reset
   
-      const usersSnap = await getDocs(collection(db, 'users'));
+      // 1. Get the class metadata from the class document
+      const classRef = doc(db, 'classes', classId);
+      const classSnap = await getDoc(classRef);
+      if (classSnap.exists()) {
+        const data = classSnap.data();
+        const { gradeLevel, sectionName, schoolYear } = data;
+        setClassMeta({ gradeLevel, sectionName, schoolYear });
+      } else {
+        setMessage('❌ Class not found');
+        return;
+      }
+  
+      // 2. Load subjects and users
+      const [subjectsSnap, usersSnap] = await Promise.all([
+        getDocs(collection(db, 'subjects')),
+        getDocs(collection(db, 'users')),
+      ]);
+      const subjectsList = subjectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       const usersList = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+      setAllSubjects(subjectsList);
       setUsers(usersList);
   
-      if (!gradeLevel || !sectionName || !schoolYear) return;
-  
+      // 3. Load assignments for this class
       const assignmentsSnap = await getDocs(collection(db, 'subjectAssignments'));
       const filteredAssignments = assignmentsSnap.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(
-          a =>
-            a.gradeLevel === gradeLevel &&
-            a.sectionName === sectionName &&
-            a.schoolYear === schoolYear
+        .filter(a =>
+          a.gradeLevel === classSnap.data().gradeLevel &&
+          a.sectionName === classSnap.data().sectionName &&
+          a.schoolYear === classSnap.data().schoolYear
         );
   
       const subjectIds = filteredAssignments.map(a => a.subjectId);
@@ -67,7 +85,7 @@ export default function ManageTeachersModal({ open, onClose, gradeLevel, section
     };
   
     initialize();
-  }, [open]);
+  }, [open, classId]);  
 
   const handleAddSubject = () => {
     const subject = allSubjects.find(s => s.id === selectedSubjectId);
@@ -124,6 +142,10 @@ export default function ManageTeachersModal({ open, onClose, gradeLevel, section
     try {
       setLoading(true);
 
+      if (!classMeta) return;
+
+      const { gradeLevel, sectionName, schoolYear } = classMeta;
+
       for (let subjectId of removedSubjectIds) {
         const docRef = doc(
           db,
@@ -148,6 +170,7 @@ export default function ManageTeachersModal({ open, onClose, gradeLevel, section
           );
   
           await setDoc(docRef, {
+            classId,
             subjectId: assign.subjectId,
             gradeLevel,
             sectionName,
@@ -175,7 +198,7 @@ export default function ManageTeachersModal({ open, onClose, gradeLevel, section
     <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
       <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
       <h2 className="text-xl font-bold text-black mb-4">
-        Manage Teachers for {gradeLevel} - {sectionName} ({schoolYear})
+        Manage Teachers for {classMeta?.gradeLevel} - {classMeta?.sectionName} ({classMeta?.schoolYear})
       </h2>
 
         <div className="flex items-center gap-3 mb-4">

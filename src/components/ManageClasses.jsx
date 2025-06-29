@@ -379,9 +379,7 @@ export default function ManageClasses({ permissions }) {
             setShowManageTeachersModal(false);
             setSelectedClassForTeachers(null);
           }}
-          gradeLevel={selectedClassForTeachers.gradeLevel}
-          sectionName={selectedClassForTeachers.sectionName}
-          schoolYear={selectedClassForTeachers.schoolYear}
+          classId={selectedClassForTeachers.id}
         />
       )}
 

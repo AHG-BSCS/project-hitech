@@ -18,32 +18,65 @@ export default function ManageGrades({ permissions }) {
   const [finalized, setFinalized] = useState({}); // Track finalized state per class/subject
   const [showConfirm, setShowConfirm] = useState({}); // Track modal visibility per class/subject
   const [modal, setModal] = useState({ open: false, message: '', type: 'info' }); // Modal state for messages
-
+  const [subjectAssignments, setSubjectAssignments] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState('');
+  
   useEffect(() => {
     const fetchData = async () => {
-      const [classSnap, subjectSnap, studentSnap, userSnap] = await Promise.all([
+      const [classSnap, subjectSnap, studentSnap, userSnap, subjectAssignSnap] = await Promise.all([
         getDocs(collection(db, 'classes')),
         getDocs(collection(db, 'subjects')),
         getDocs(collection(db, 'students')),
         getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'subjectAssignments')),
       ]);
       setClasses(classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setSubjects(subjectSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setStudents(studentSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setUsers(userSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    };
+      setSubjectAssignments(subjectAssignSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    };    
     fetchData();
   }, [refresh]);
 
+  useEffect(() => {
+    const fetchSubjectAssignments = async () => {
+      const snapshot = await getDocs(collection(db, 'subjectAssignments'));
+      setSubjectAssignments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    };
+    fetchSubjectAssignments();
+  }, []); 
+
+  useEffect(() => {
+    const employeeId = localStorage.getItem('employeeId') || '';
+    console.log('Current Employee ID:', employeeId);
+  
+    // Find the subject assignment where teacherEmployeeId matches employeeId
+    const assignment = subjectAssignments.find(sa => sa.teacherEmployeeId === employeeId);
+    if (assignment) {
+      // assignment.id is the document id of the subjectAssignment, maybe related to the subject or teacher
+      // If you want the user doc id associated, maybe you have a userId or teacherId field inside the assignment
+  
+      // Example: if you store teacherId (user document id) in assignment
+      setCurrentUserId(assignment.teacherId || ''); // Or whichever field you have for userId
+    } else {
+      setCurrentUserId('');
+    }
+  }, [subjectAssignments]);  
+
+  console.log(subjects.filter(subj => subj.teacherId));
+
+  const filteredSubjectAssignments = subjectAssignments.filter(sa => sa.teacherId === currentUserId);
+
   // Only show classes that have at least one assigned subject
   const classesWithSubjects = classes.filter(cls =>
-    subjects.some(subj => subj.classId === cls.id)
+    filteredSubjectAssignments.some(sa => sa.classId === cls.id)
   );
-
+  
   // Helper to get subjects for a class
-  const getSubjectsForClass = (classId) =>
-    subjects.filter(subj => subj.classId === classId);
-
+  const getSubjectAssignmentsForClass = (classId) =>
+    filteredSubjectAssignments.filter(sa => sa.classId === classId);
+  
   // Helper to get students for a class
   const getStudentsForClass = (classId) =>
     students.filter(stu => {
@@ -201,12 +234,11 @@ export default function ManageGrades({ permissions }) {
           onChange={e => setSearchClass(e.target.value)}
         />
         <div className="overflow-x-auto">
-          <table className="table w-full text-sm text-left text-gray-700">
+          <table className="table w-full text-sm text-left border border-gray text-gray-700">
             <thead className="bg-gray-100 text-black sticky top-0 z-10">
               <tr>
                 <th>Class</th>
                 <th>Subjects</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -215,41 +247,54 @@ export default function ManageGrades({ permissions }) {
                   cls.sectionName?.toLowerCase().includes(searchClass.toLowerCase())
                 )
                 .map(cls => (
-                  <tr key={cls.id}>
-                    <td>{cls.sectionName}</td>
-                    <td>
-                      {getSubjectsForClass(cls.id).map(subj => (
-                        <div key={subj.id} className="mb-2">
-                          <span className="font-semibold">{subj.name}</span> <span className="text-xs text-gray-500">({getTeacherName(subj.teacherId)})</span>
-                        </div>
-                      ))}
-                    </td>
-                    <td>
-                      {getSubjectsForClass(cls.id).map(subj => (
-                        <button
-                          key={subj.id}
-                          className="btn btn-sm bg-blue-600 text-white mr-2 mb-2"
-                          onClick={async () => {
-                            setShowGradeTable(prev => ({ ...prev, [`${cls.id}_${subj.id}`]: !prev[`${cls.id}_${subj.id}`] }));
-                            if (!grades[`${cls.id}_${subj.id}`]) await fetchGrades(cls.id, subj.id);
-                          }}
-                        >
-                          {showGradeTable[`${cls.id}_${subj.id}`] ? 'Hide' : 'Encode Grades'}
-                        </button>
-                      ))}
-                    </td>
-                  </tr>
-                ))}
+                  <tr key={cls.id} className='border border-gray-300'>
+                  <td>{cls.sectionName}</td>
+                  <td>
+                    <div className="flex flex-col gap-4">
+                      {getSubjectAssignmentsForClass(cls.id).map(sa => {
+                        const subj = subjects.find(s => s.id === sa.subjectId) || { name: 'Unknown' };
+                        return (
+                          <div
+                            key={sa.id}
+                            className="flex items-center justify-between gap-2 bg-gray-100 px-2 py-1 rounded"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">{subj.name}</span>
+                              <span className="text-xs text-gray-500">({getTeacherName(sa.teacherId)})</span>
+                            </div>
+
+                            <button
+                              className="btn btn-xs bg-blue-600 text-white"
+                              onClick={async () => {
+                                const key = `${cls.id}_${sa.subjectId}`;
+                                setShowGradeTable(prev => ({ ...prev, [key]: !prev[key] }));
+                                if (!grades[key]) await fetchGrades(cls.id, sa.subjectId);
+                              }}
+                            >
+                              {showGradeTable[`${cls.id}_${sa.subjectId}`] ? 'Hide' : 'Encode'}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </Section>
 
       {/* Grade Encoding Tables */}
-      {classesWithSubjects.map(cls => (
-        getSubjectsForClass(cls.id).map(subj => (
-          showGradeTable[`${cls.id}_${subj.id}`] && (
-            <Section key={`${cls.id}_${subj.id}`} title={`Encode Grades: ${cls.sectionName} - ${subj.name}`}>
+      {classesWithSubjects.map(cls =>
+        getSubjectAssignmentsForClass(cls.id).map(sa => {
+          const key = `${cls.id}_${sa.subjectId}`;
+          if (!showGradeTable[key]) return null;
+
+          const subj = subjects.find(s => s.id === sa.subjectId) || { name: 'Unknown' };
+
+          return (
+            <Section key={key} title={`Encode Grades: ${cls.sectionName} - ${subj.name}`}>
               <div className="overflow-x-auto">
                 <table className="table w-full text-sm text-left text-gray-700">
                   <thead className="bg-gray-100 text-black sticky top-0 z-10">
@@ -260,16 +305,16 @@ export default function ManageGrades({ permissions }) {
                   </thead>
                   <tbody>
                     {getStudentsForClass(cls.id).map(stu => {
-                      // Compose name: Last Name, First Name Middle Name (if available)
+                      // Compose displayName same as before
                       const lastName = stu.lastName || stu.lastname || '';
                       const firstName = stu.firstName || stu.firstname || '';
                       const middleName = stu.middleName || stu.middlename || '';
                       const displayName = `${lastName}${lastName && firstName ? ', ' : ''}${firstName}${middleName ? ' ' + middleName : ''}`.trim() || stu.name || stu.fullName || stu.id || JSON.stringify(stu);
-                      const gradeValue = grades[`${cls.id}_${subj.id}`]?.[stu.id] || '';
+                      const gradeValue = grades[key]?.[stu.id] || '';
                       const tag = getGradeTag(gradeValue);
-                      const isFinal = finalized[`${cls.id}_${subj.id}`];
-                      // Permission: can encode if not finalized, or if manage permission
+                      const isFinal = finalized[key];
                       const canEncode = (!isFinal && (canManage || canView)) || (isFinal && canManage);
+
                       return (
                         <tr key={stu.id}>
                           <td>{displayName}</td>
@@ -278,7 +323,7 @@ export default function ManageGrades({ permissions }) {
                               type="text"
                               className="input input-bordered w-24 bg-white border border-gray-300 text-black"
                               value={gradeValue}
-                              onChange={e => handleGradeChange(cls.id, subj.id, stu.id, e.target.value)}
+                              onChange={e => handleGradeChange(cls.id, sa.subjectId, stu.id, e.target.value)}
                               disabled={!canEncode}
                             />
                             {tag && (
@@ -300,19 +345,18 @@ export default function ManageGrades({ permissions }) {
                     })}
                   </tbody>
                 </table>
-                {canManage || (!finalized[`${cls.id}_${subj.id}`] && canView) ? (
+                {(canManage || (!finalized[key] && canView)) && (
                   <div className="flex gap-4 mt-4">
                     <button
                       className="btn bg-gray-400 text-white"
-                      onClick={() => handleSaveDraft(cls.id, subj.id)}
-                      disabled={finalized[`${cls.id}_${subj.id}`]}
+                      onClick={() => handleSaveDraft(cls.id, sa.subjectId)}
+                      disabled={finalized[key]}
                     >
                       Save as Draft
                     </button>
                     <button
                       className="btn bg-green-600 text-white"
                       onClick={() => {
-                        const key = `${cls.id}_${subj.id}`;
                         const gradeEntries = grades[key] || {};
                         const studentsForClass = getStudentsForClass(cls.id);
                         if (!areGradesValid(gradeEntries, studentsForClass)) {
@@ -321,30 +365,29 @@ export default function ManageGrades({ permissions }) {
                         }
                         setShowConfirm(prev => ({ ...prev, [key]: true }));
                       }}
-                      disabled={finalized[`${cls.id}_${subj.id}`]}
+                      disabled={finalized[key]}
                     >
                       Save Grades
                     </button>
                   </div>
-                ) : null}
-                {/* Confirmation Modal */}
-                {showConfirm[`${cls.id}_${subj.id}`] && (
+                )}
+                {showConfirm[key] && (
                   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                     <div className="bg-white p-6 rounded shadow-lg">
                       <h3 className="text-lg font-bold mb-2">Confirm Finalization</h3>
                       <p>Are you sure you want to finalize these grades? This action <strong>CANNOT</strong> be undone.</p>
                       <div className="flex gap-4 mt-4">
-                        <button className="btn bg-green-600 text-white" onClick={() => handleSaveGrades(cls.id, subj.id)}>Yes, Finalize</button>
-                        <button className="btn bg-gray-400 text-black" onClick={() => setShowConfirm(prev => ({ ...prev, [`${cls.id}_${subj.id}`]: false }))}>Cancel</button>
+                        <button className="btn bg-green-600 text-white" onClick={() => handleSaveGrades(cls.id, sa.subjectId)}>Yes, Finalize</button>
+                        <button className="btn bg-gray-400 text-black" onClick={() => setShowConfirm(prev => ({ ...prev, [key]: false }))}>Cancel</button>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
             </Section>
-          )
-        ))
-      ))}
+          );
+        })
+      )}
 
       {/* Message Modal */}
       {modal.open && (
