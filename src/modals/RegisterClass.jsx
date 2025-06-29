@@ -152,6 +152,7 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
                     (u.name || '').toLowerCase().includes(adviserSearch.toLowerCase()) ||
                     (u.email || '').toLowerCase().includes(adviserSearch.toLowerCase())
                   ))
+                    .filter(u => u.active !== false) // Only show active users
                     .map(u => (
                       <li
                         key={u.id}
@@ -168,7 +169,7 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
                   {(adviserSearch !== '' && users.filter(u =>
                     (u.name || '').toLowerCase().includes(adviserSearch.toLowerCase()) ||
                     (u.email || '').toLowerCase().includes(adviserSearch.toLowerCase())
-                  ).length === 0) && (
+                  ).filter(u => u.active !== false).length === 0) && (
                     <li className="px-4 py-2 text-gray-400">No advisers found</li>
                   )}
                 </ul>

@@ -29,6 +29,21 @@ function LockedModal({ open, onClose }) {
   );
 }
 
+function InactiveModal({ open, onClose }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+      <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
+        <h2 className="text-lg font-bold mb-4 text-yellow-600">Account Inactive</h2>
+        <p className="mb-4">Your account has been marked as inactive. Please contact your administrator for assistance.</p>
+        <div className="flex justify-end">
+          <button type="button" className="btn" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Login() {
   const [form, setForm] = useState({ employeeId: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -48,6 +63,7 @@ export default function Login() {
   const [fetching, setFetching] = useState(false);
   const fetchedOnce = useRef(false);
   const [showLockedModal, setShowLockedModal] = useState(false);
+  const [showInactiveModal, setShowInactiveModal] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -71,6 +87,12 @@ export default function Login() {
       const userDoc = querySnapshot.docs[0];
       const userData = userDoc.data();
       
+      if (userData.active === false) {
+        setShowInactiveModal(true);
+        setLoading(false);
+        return;
+      }
+  
       if (userData.isLocked) {
         setShowLockedModal(true);
         setLoading(false);
@@ -291,6 +313,7 @@ export default function Login() {
         </form>
       </div>
       <LockedModal open={showLockedModal} onClose={() => setShowLockedModal(false)} />
+      <InactiveModal open={showInactiveModal} onClose={() => setShowInactiveModal(false)} />
     </div>
   );
 }

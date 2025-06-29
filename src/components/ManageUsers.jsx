@@ -127,22 +127,22 @@ export default function ManageUsers({ permissions }) {
 
   const handleMakeInactive = async (uid) => {
     await setDoc(doc(db, 'users', uid), { active: false }, { merge: true });
+    setUsers(prev => prev.map(user => user.id === uid ? { ...user, active: false } : user));
     setSuccessMessage('User marked inactive');
     setShowSuccessModal(true);
+  };
+
+  const handleMakeActive = async (uid) => {
+    await setDoc(doc(db, 'users', uid), { active: true }, { merge: true });
+    setUsers(prev => prev.map(user => user.id === uid ? { ...user, active: true } : user));
+    setSuccessMessage('User marked active');
+    setShowSuccessModal(true);
+    fetchUser();
   };
 
   const handleResetPassword = (user) => {
     setResetUser(user);
     setShowResetModal(true);
-  };
-
-  const handleDeleteUser = async (uid) => {
-    if (confirm('Are you sure?')) {
-      await deleteDoc(doc(db, 'users', uid));
-      setUsers(prev => prev.filter(user => user.id !== uid));
-      setSuccessMessage('User deleted');
-      setShowSuccessModal(true);
-    }
   };
 
   const handleLockUser = async (uid) => {
@@ -269,11 +269,17 @@ export default function ManageUsers({ permissions }) {
                       <td>{user.employeeId}</td>
                       <td>{user.name}</td>
                       <td>{user.email}</td>
-                      <td>{user.role} {user.active === false && (
-  <span className="ml-2 px-2 py-0.5 rounded bg-gray-400 text-white text-xs">Inactive</span>
-)} {user.isLocked && (
-  <span className="ml-2 px-2 py-0.5 rounded bg-yellow-500 text-white text-xs">Locked</span>
-)}
+                      <td>
+                        {user.role}
+                        {user.active === false && (
+                          <span className="ml-2 px-2 py-0.5 rounded bg-gray-400 text-white text-xs">Inactive</span>
+                        )}
+                        {user.active !== false && !user.isLocked && (
+                          <span className="ml-2 px-2 py-0.5 rounded bg-green-500 text-white text-xs">Active</span>
+                        )}
+                        {user.isLocked && (
+                          <span className="ml-2 px-2 py-0.5 rounded bg-yellow-500 text-white text-xs">Locked</span>
+                        )}
                       </td>
                       <td className="relative">
                         <button
@@ -288,12 +294,21 @@ export default function ManageUsers({ permissions }) {
                             ref={dropdownRef}
                             className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-40 bg-white border rounded shadow-md z-10`}
                           >
-                            <button
-                              onClick={() => handleMakeInactive(user.id)}
-                              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
-                            >
-                              Make Inactive
-                            </button>
+                            {user.active === false ? (
+                              <button
+                                onClick={() => handleMakeActive(user.id)}
+                                className="block w-full px-4 py-2 text-left hover:bg-green-100"
+                              >
+                                Mark Active
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleMakeInactive(user.id)}
+                                className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+                              >
+                                Mark Inactive
+                              </button>
+                            )}
                             <button
                               onClick={() => handleResetPassword(user)}
                               className="block w-full px-4 py-2 text-left hover:bg-gray-100"
@@ -315,12 +330,6 @@ export default function ManageUsers({ permissions }) {
                                 Lock User
                               </button>
                             )}
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="block w-full px-4 py-2 text-left text-red-600 hover:bg-red-100"
-                            >
-                              Delete User
-                            </button>
                           </div>
                         )}
                       </td>
