@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import ViewStudent from '../modals/ViewStudent';
 
 export default function ViewClasses() {
   const [classes, setClasses] = useState([]);
@@ -11,6 +11,8 @@ export default function ViewClasses() {
   const [showViewStudentsModal, setShowViewStudentsModal] = useState(false);
   const [studentsInClass, setStudentsInClass] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [studentSearch, setStudentSearch] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,6 +44,11 @@ export default function ViewClasses() {
       cls.gradeLevel?.toLowerCase().includes(searchClass.toLowerCase()) ||
       cls.sectionName?.toLowerCase().includes(searchClass.toLowerCase()) ||
       cls.adviser?.toLowerCase().includes(searchClass.toLowerCase())
+    );
+
+const filteredStudents = studentsInClass.filter(student =>
+    `${student.firstName} ${student.lastName}`.toLowerCase().includes(studentSearch.toLowerCase()) ||
+    student.learningReferenceNumber?.toLowerCase().includes(studentSearch.toLowerCase())
     );
 
   return (
@@ -96,31 +103,63 @@ export default function ViewClasses() {
         </div>
       </Section>
 
-      {/* View Students Modal */}
       {showViewStudentsModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h3 className="text-lg text-black font-bold mb-4">Students in {selectedClass?.sectionName}</h3>
-            {studentsInClass.length === 0 ? (
-              <p className="text-gray-500">No students assigned to this class.</p>
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h3 className="text-lg text-black font-bold mb-4">
+                Students in {selectedClass?.sectionName}
+            </h3>
+
+            <input
+                type="text"
+                placeholder="Search by name or LRN"
+                className="input bg-white input-bordered w-full mb-3 border border-gray-300 text-black"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+            />
+
+            {filteredStudents.length === 0 ? (
+                <p className="text-gray-500">No students match your search.</p>
             ) : (
-              <ul className="space-y-2 text-black max-h-60 overflow-y-auto">
-                {studentsInClass.map(student => (
-                  <li key={student.id} className="border-b py-1">
-                    {student.lastName}, {student.firstName} ({student.learningReferenceNumber})
-                  </li>
+                <ul className="space-y-2 text-black max-h-60 overflow-y-auto">
+                {filteredStudents.map(student => (
+                    <li
+                    key={student.id}
+                    className="border-b py-1 flex justify-between items-center hover:bg-gray-100 px-2"
+                    >
+                    <span>
+                        {student.lastName}, {student.firstName} ({student.learningReferenceNumber})
+                    </span>
+                    <button
+                        className="text-sm text-blue-600 hover:underline"
+                        onClick={() => setSelectedStudent(student)}
+                    >
+                        View
+                    </button>
+                    </li>
                 ))}
-              </ul>
+                </ul>
             )}
+
             <button
-              className="mt-4 btn bg-blue-600 text-white w-full"
-              onClick={() => setShowViewStudentsModal(false)}
+                className="mt-4 btn bg-blue-600 text-white w-full"
+                onClick={() => setShowViewStudentsModal(false)}
             >
-              Close
+                Close
             </button>
-          </div>
+            </div>
         </div>
-      )}
+        )}
+
+    {selectedStudent && (
+    <ViewStudent
+        student={selectedStudent}
+        onClose={() => setSelectedStudent(null)}
+        onGenerateSF9={(student) => {
+        import('../utils/generateSF9').then(mod => mod.generateSF9(student));
+        }}
+    />
+    )}
     </div>
   );
 }
