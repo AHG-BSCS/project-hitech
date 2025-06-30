@@ -12,6 +12,7 @@ import Home from '../components/Home';
 import PortalSettings from '../components/PortalSettings';
 import ManageSubjects from '../components/ManageSubjects';
 import ManageGrades from '../components/ManageGrades';
+import ViewClasses from '../components/ViewClasses';
 import { useSystemSettings } from '../context/SystemSettingsContext';
 import { FaHome, FaUserGraduate, FaChalkboardTeacher, FaUsers, FaUserShield, FaCogs, FaCog, FaSchool } from 'react-icons/fa';
 
@@ -42,11 +43,13 @@ export default function Dashboard() {
             setShowLockedModal(true);
             await signOut(auth);
             localStorage.removeItem('employeeId');
+            localStorage.removeItem('userId');
             localStorage.removeItem('isAuthenticated');
             return;
           }
           setEmployeeId(userData.employeeId);
           localStorage.setItem('employeeId', userData.employeeId);
+          localStorage.setItem('userId', auth.currentUser.uid);
           setPermissions(userData.permissions || 0);
           setUserRole(userData.role || '');
         }
@@ -59,6 +62,7 @@ export default function Dashboard() {
   const handleLogout = async () => {
     await signOut(auth);
     localStorage.removeItem('employeeId');
+    localStorage.removeItem('userId');
     localStorage.removeItem('isAuthenticated');
     window.location.href = '/';
   };
@@ -253,9 +257,16 @@ export default function Dashboard() {
             } />
             <Route path="roles" element={requirePermission(PERMISSIONS.MANAGE_ROLES) ? <ManageRoles permissions={permissions} /> : <NotAuthorized />} />
             <Route path="classes" element={
-              hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) || hasPermission(permissions, PERMISSIONS.VIEW_CLASSES)
-                ? <ManageClasses permissions={permissions} />
-                : <NotAuthorized />
+              hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) || hasPermission(permissions, PERMISSIONS.VIEW_CLASSES) ? (
+                <>
+                  {hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) && (
+                    <ManageClasses permissions={permissions} />
+                  )}
+                  {hasPermission(permissions, PERMISSIONS.VIEW_CLASSES) && (
+                    <ViewClasses employeeId={employeeId} />
+                  )}
+                </>
+              ) : <NotAuthorized />
             } />
             <Route path="grade" element={
               hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) || hasPermission(permissions, PERMISSIONS.ENCODE_GRADES)

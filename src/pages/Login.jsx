@@ -150,6 +150,7 @@ export default function Login() {
 
       if (userSnap.exists() && !userSnap.data().requirePasswordChange && !userSnap.data().defaultPassword) {
         localStorage.setItem('employeeId', form.employeeId);
+        localStorage.setItem('userId', loggedInUser.uid);
         localStorage.setItem('isAuthenticated', 'true');
         navigate('/home');
         return;
@@ -164,7 +165,7 @@ export default function Login() {
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    if (isAuthenticated) navigate('/dashboard');
+    if (isAuthenticated) navigate('/home');
   }, []);
 
   // Fetch background and settings from Firestore, update cache if changed

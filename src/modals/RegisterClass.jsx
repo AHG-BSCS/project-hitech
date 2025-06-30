@@ -6,6 +6,7 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
   const [gradeLevel, setGradeLevel] = useState('');
   const [sectionName, setSectionName] = useState('');
   const [adviser, setAdviser] = useState('');
+  const [adviserId, setAdviserId] = useState('');
   const [schoolYear, setSchoolYear] = useState('');
   const [adviserSearch, setAdviserSearch] = useState('');
   const [adviserDropdownOpen, setAdviserDropdownOpen] = useState(false);
@@ -17,12 +18,13 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
       setGradeLevel(initialData?.gradeLevel || '');
       setSectionName(initialData?.sectionName || '');
       setAdviser(initialData?.adviser || '');
+      setAdviserId(initialData?.adviserId || '');
       setSchoolYear(initialData?.schoolYear || '');
       setAdviserSearch('');
       setAdviserDropdownOpen(false);
       setMessage('');
     }
-  }, [initialData, open]);
+  }, [initialData, open]);  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,37 +32,35 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
     setMessage('');
 
     try {
+      const classData = {
+        gradeLevel,
+        sectionName,
+        adviser,
+        adviserId,
+        schoolYear,
+        createdAt: initialData?.createdAt || new Date(),
+      };
+      
       if (initialData?.id) {
-        await setDoc(doc(db, 'classes', initialData.id), {
-          gradeLevel,
-          sectionName,
-          adviser,
-          schoolYear,
-          createdAt: initialData.createdAt || new Date(),
-        }, { merge: true });
+        await setDoc(doc(db, 'classes', initialData.id), classData, { merge: true });
         setMessage('✅ Class updated successfully!');
       } else {
-        await addDoc(collection(db, 'classes'), {
-          gradeLevel,
-          sectionName,
-          adviser,
-          schoolYear,
-          createdAt: new Date(),
-        });
+        await addDoc(collection(db, 'classes'), classData);
         setGradeLevel('');
         setSectionName('');
         setAdviser('');
+        setAdviserId('');
         setSchoolYear('');
         setMessage('✅ Class added successfully!');
       }
 
       if (typeof onSaved === 'function') onSaved();
-    } catch (err) {
-      console.error('Failed to save class:', err);
-      setMessage(`❌ ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
+      } catch (err) {
+        console.error('Failed to save class:', err);
+        setMessage(`❌ ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
   };
 
   // School year options: previous year to 3 years ahead
@@ -139,7 +139,6 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
                 value={adviserSearch || adviser}
                 onChange={e => {
                   setAdviserSearch(e.target.value);
-                  setAdviser('');
                   setAdviserDropdownOpen(true);
                 }}
                 autoComplete="off"
@@ -159,9 +158,11 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
                         className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
                         onMouseDown={() => {
                           setAdviser(u.name ? `${u.name} (${u.email})` : u.email);
+                          setAdviserId(u.id);
                           setAdviserSearch('');
                           setAdviserDropdownOpen(false);
                         }}
+                        
                       >
                         {u.name ? `${u.name} (${u.email})` : u.email}
                       </li>
@@ -196,7 +197,7 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
               type="submit"
               className="btn bg-blue-500 hover:bg-blue-600 text-white"
             >
-              {loading ? 'Adding...' : 'Add'}
+              {loading ? (initialData ? 'Saving...' : 'Adding...') : (initialData ? 'Save' : 'Add')}
             </button>
           </div>
         </form>
