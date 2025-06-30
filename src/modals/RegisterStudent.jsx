@@ -14,8 +14,6 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
   const [sex, setSex] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [schoolYear, setSchoolYear] = useState('');
-  const [gradeLevel, setGradeLevel] = useState('');
 
   useEffect(() => {
     if (studentToEdit) {
@@ -26,8 +24,6 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
       setNameExtension(studentToEdit.nameExtension || '');
       setBirthdate(studentToEdit.birthdate || '');
       setSex(studentToEdit.sex || '');
-      setSchoolYear(studentToEdit.schoolYear || '');
-      setGradeLevel(studentToEdit.gradeLevel || '');
     } else {
       setLRN('');
       setFirstName('');
@@ -36,49 +32,17 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
       setNameExtension('');
       setBirthdate('');
       setSex('');
-      setSchoolYear('');
-      setGradeLevel('');
     }
     setMessage('');
   }, [studentToEdit]);
 
   if (!open) return null;
 
-  const handleSchoolYearChange = (e) => {
-    let input = e.target.value;
-  
-    if (e.nativeEvent.inputType === 'deleteContentBackward') {
-      setSchoolYear(input);
-      setMessage('');
-      return;
-    }
-  
-    const digits = input.replace(/[^0-9]/g, '');
-  
-    if (digits.length === 4) {
-      const startYear = parseInt(digits, 10);
-      const endYear = startYear + 1;
-      const formatted = `${startYear}-${endYear}`;
-      setSchoolYear(formatted);
-    } else {
-      setSchoolYear(input);
-    }
-  
-    setMessage('');
-  };  
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
     if (!learningReferenceNumber.trim() || !firstName.trim() || !lastName.trim() || !sex || !birthdate) {
       setMessage('⚠️ Please complete all required fields.');
-      return;
-    }
-
-    const yearPattern = /^(\d{4})-(\d{4})$/;
-    const match = schoolYear.match(yearPattern);
-    if (!match || parseInt(match[2]) !== parseInt(match[1]) + 1) {
-      setMessage('⚠️ Please enter a valid school year format (e.g., 2025-2026).');
       return;
     }
 
@@ -93,8 +57,6 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
         nameExtension,
         birthdate,
         sex,
-        schoolYear,
-        gradeLevel,
       };
 
       if (studentToEdit) {
@@ -117,8 +79,6 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
       setNameExtension('');
       setBirthdate('');
       setSex('');
-      setSchoolYear('');
-      setGradeLevel('');
 
       refreshStudents();
     } catch (error) {
@@ -140,8 +100,6 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
       nameExtension,
       birthdate,
       sex,
-      schoolYear,
-      gradeLevel,
     };
     await generateSF9(student);
   };
@@ -260,38 +218,6 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
                   <span className="ml-2 text-black">Female</span>
                 </label>
               </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-800 mb-1">School Year</label>
-              <input
-                type="text"
-                className={`input input-bordered w-full bg-white border border-gray-300 text-black ${viewOnly ? 'cursor-default' : ''}`}
-                placeholder="e.g. 2025-2026"
-                maxLength={9}
-                value={schoolYear}
-                onChange={handleSchoolYearChange}
-                readOnly={viewOnly}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-800 mb-1">Grade</label>
-              <select
-                className={`input input-bordered w-full bg-white border border-gray-300 text-black ${viewOnly ? 'cursor-default' : ''}`}
-                value={gradeLevel}
-                onChange={(e) => (setGradeLevel(e.target.value), setMessage(''))}
-                disabled={viewOnly}
-                required
-              >
-                <option value="">Select Grade</option>
-                <option value="Grade 7">Grade 7</option>
-                <option value="Grade 8">Grade 8</option>
-                <option value="Grade 9">Grade 9</option>
-                <option value="Grade 10">Grade 10</option>
-              </select>
             </div>
           </div>
 

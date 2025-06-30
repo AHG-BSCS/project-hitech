@@ -7,6 +7,8 @@ export default function AddStudentToClassModal({ open, onClose, classData, stude
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [schoolYear, setSchoolYear] = useState('');
+  const [gradeLevel, setGradeLevel] = useState('');
 
   if (!open || !classData) return null;
 
@@ -29,26 +31,33 @@ export default function AddStudentToClassModal({ open, onClose, classData, stude
     }
     setLoading(true);
     setMessage('');
+  
     try {
-      // Add students to class's students array
       const classRef = doc(db, 'classes', classData.id);
       await updateDoc(classRef, {
         students: arrayUnion(...selectedStudentIds),
       });
-      // Update each student's classId field
+  
       await Promise.all(selectedStudentIds.map(async (studentId) => {
         const studentRef = doc(db, 'students', studentId);
-        await updateDoc(studentRef, { classId: classData.id });
+        await updateDoc(studentRef, {
+          classId: classData.id,
+          gradeLevel: classData.gradeLevel,
+          schoolYear: classData.schoolYear,
+          attendance: [],
+        });
       }));
+  
       setMessage('✅ Student(s) added to class!');
       if (onStudentAdded) onStudentAdded();
       setTimeout(() => onClose(), 1000);
     } catch (err) {
+      console.error(err);
       setMessage('❌ Failed to add student(s).');
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   const filteredStudents = students.filter(s => {
     const searchLower = search.toLowerCase();

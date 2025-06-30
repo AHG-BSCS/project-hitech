@@ -397,7 +397,7 @@ export default function ManageClasses({ permissions }) {
       {showViewStudentsModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">Students in {selectedClass?.sectionName}</h3>
+            <h3 className="text-lg text-black font-bold mb-4">Students in {selectedClass?.sectionName}</h3>
             {studentsInClass.length === 0 ? (
               <p className="text-gray-500">No students assigned to this class.</p>
             ) : (
@@ -409,7 +409,7 @@ export default function ManageClasses({ permissions }) {
               >
                 <ul className="space-y-2 max-h-60 overflow-y-auto">
                   {studentsInClass.map(student => (
-                    <li key={student.id} className="border-b py-1 flex items-center gap-2">
+                    <li key={student.id} className="border-b text-black py-1 flex items-center gap-2">
                       {!isViewOnly && (
                         <input
                           type="checkbox"

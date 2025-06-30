@@ -43,7 +43,7 @@ export default function GradesAnalysis({ student, onClose }) {
 
         <div className="overflow-x-auto">
           <table className="table w-full text-sm text-left text-black mb-6">
-            <thead className="bg-gray-100">
+            <thead className="bg-gray-100 text-black">
               <tr>
                 <th>Subject</th>
                 <th>Q1</th>

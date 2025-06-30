@@ -102,29 +102,32 @@ export default function DashboardHome() {
       </Section>
       <Section title="Student Population">
       <ResponsiveContainer width="100%" height={400}>
-  <LineChart data={chartData}>
-    <CartesianGrid strokeDasharray="3 3" />
-    <XAxis dataKey="schoolYear" />
-    <YAxis allowDecimals={false} />
-    <Tooltip />
-    <Legend />
-    <Line type="monotone" dataKey="total" stroke="#8884d8" strokeWidth={3} name="Total Students" />
-    {/* Auto-generate grade lines */}
-    {chartData.length > 0 &&
-      Object.keys(chartData[0])
-        .filter(key => key !== 'schoolYear' && key !== 'total')
-        .map((grade, idx) => (
-          <Line
-            key={grade}
-            type="monotone"
-            dataKey={grade}
-            stroke={['#82ca9d', '#ffc658', '#ff7300', '#ff4d4f', '#00bcd4'][idx % 5]}
-            name={grade}
-            strokeDasharray="4 2"
-          />
-        ))}
-  </LineChart>
-</ResponsiveContainer>
+      <LineChart data={chartData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="schoolYear" />
+        <YAxis allowDecimals={false} />
+        <Tooltip />
+        <Legend />
+        <Line type="monotone" dataKey="total" stroke="#8884d8" strokeWidth={3} name="Total Students" />
+        {chartData.length > 0 &&
+          Array.from(
+            new Set(
+              chartData.flatMap(item =>
+                Object.keys(item).filter(key => key !== 'schoolYear' && key !== 'total')
+              )
+            )
+          ).map((grade, idx) => (
+            <Line
+              key={grade}
+              type="monotone"
+              dataKey={grade}
+              stroke={['#82ca9d', '#ffc658', '#ff7300', '#ff4d4f', '#00bcd4'][idx % 5]}
+              name={grade}
+              strokeDasharray="4 2"
+            />
+          ))}
+      </LineChart>
+    </ResponsiveContainer>
       </Section>
     </>
   );
