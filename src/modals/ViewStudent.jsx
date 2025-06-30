@@ -78,6 +78,12 @@ export default function ViewStudent({ student, onClose, onGenerateSF9 }) {
             <button
               type="button"
               className="btn bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              Grades Analysis
+            </button>
+            <button
+              type="button"
+              className="btn bg-blue-500 hover:bg-blue-600 text-white"
               onClick={() => onGenerateSF9(student)}
             >
               SF9
