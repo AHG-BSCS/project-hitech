@@ -1,8 +1,11 @@
 import React from 'react';
+import GradesAnalysis from './GradesAnalysis';
+import { useState } from 'react';
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 
 export default function ViewStudent({ student, onClose, onGenerateSF9 }) {
   if (!student) return null;
+  const [showGradeAnalysis, setShowGradeAnalysis] = useState(false);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
@@ -78,6 +81,7 @@ export default function ViewStudent({ student, onClose, onGenerateSF9 }) {
             <button
               type="button"
               className="btn bg-blue-500 hover:bg-blue-600 text-white"
+              onClick={() => setShowGradeAnalysis(true)}
             >
               Grades Analysis
             </button>
@@ -98,6 +102,12 @@ export default function ViewStudent({ student, onClose, onGenerateSF9 }) {
           </div>
         </div>
       </div>
+      {showGradeAnalysis && (
+        <GradesAnalysis
+          student={student}
+          onClose={() => setShowGradeAnalysis(false)}
+        />
+      )}
     </div>
   );
 }
