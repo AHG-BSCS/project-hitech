@@ -50,6 +50,10 @@ export async function generateSF9(student, classes) {
   // Remove email and parentheses, then make uppercase
   adviser = adviser.replace(/\([^)]*\)/g, '').replace(/\S+@\S+\.\S+/, '').trim().toUpperCase();
 
+  if (!adviser) {
+    adviser = localStorage.getItem('adviser').replace(/\([^)]*\)/g, '').replace(/\S+@\S+\.\S+/, '').trim().toUpperCase();;
+  }
+
   const settings = await getSystemSettings();  
   const data = {
     firstName: student.firstName || '',

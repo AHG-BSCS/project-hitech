@@ -51,6 +51,10 @@ const filteredStudents = studentsInClass.filter(student =>
     student.learningReferenceNumber?.toLowerCase().includes(studentSearch.toLowerCase())
     );
 
+const setClass = (cls) => {
+  localStorage.setItem('adviser', cls.adviser);
+}
+
   return (
     <div>
       <Section title="My Classes">
@@ -90,7 +94,7 @@ const filteredStudents = studentsInClass.filter(student =>
                     </td>
                     <td>
                       <button
-                        onClick={() => handleViewStudents(cls)}
+                        onClick={() => {handleViewStudents(cls), setClass(cls)}}
                         className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
                       >
                         View Students
@@ -143,7 +147,7 @@ const filteredStudents = studentsInClass.filter(student =>
 
             <button
                 className="mt-4 btn bg-blue-600 text-white w-full"
-                onClick={() => setShowViewStudentsModal(false)}
+                onClick={() => {setShowViewStudentsModal(false), localStorage.removeItem('adviser')}}
             >
                 Close
             </button>
