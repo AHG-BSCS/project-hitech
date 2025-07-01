@@ -3,6 +3,7 @@ import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import { generateSF9 } from '../utils/generateSF9';
+import { generateSF10 } from '../utils/generateSF10';
 
 export default function RegisterStudent({ open, onClose, refreshStudents, studentToEdit, viewOnly = false }) {
   const [learningReferenceNumber, setLRN] = useState('');
@@ -91,7 +92,6 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
 
   // Handler for SF9 button
   const handleSF9 = async () => {
-    // Use either studentToEdit or current form state
     const student = studentToEdit || {
       learningReferenceNumber,
       firstName,
@@ -102,6 +102,20 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
       sex,
     };
     await generateSF9(student);
+  };
+
+  // Handler for SF10 button
+  const handleSF10 = async () => {
+    const student = studentToEdit || {
+      learningReferenceNumber,
+      firstName,
+      middleName,
+      lastName,
+      nameExtension,
+      birthdate,
+      sex,
+    };
+    await generateSF10(student);
   };
 
   return (
@@ -239,6 +253,7 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
               <button
                 type="button"
                 className='btn bg-blue-500 hover:bg-blue-600 text-white'
+                onClick={handleSF10}
               >
                 SF10
               </button>
