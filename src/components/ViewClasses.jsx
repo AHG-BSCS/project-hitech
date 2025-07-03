@@ -14,38 +14,25 @@ export default function ViewClasses() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [studentSearch, setStudentSearch] = useState('');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const [classSnap, studentSnap] = await Promise.all([
-        getDocs(collection(db, 'classes')),
-        getDocs(collection(db, 'students'))
-      ]);
-
-      setClasses(classSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), status: doc.data().status || 'active' })));
-      setStudents(studentSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    };
-    fetchData();
-
-    const userDocId = localStorage.getItem('userId');
-    setCurrentUserId(userDocId);
-  }, []);
+ 
 
   useEffect(() => {
     const unsubscribeClasses = onSnapshot(collection(db, 'classes'), (snapshot) => {
       const updatedClasses = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        status: doc.data().status || 'active'
+        status: doc.data().status || 'active',
       }));
       setClasses(updatedClasses);
     });
   
-    const fetchStudents = async () => {
-      const studentSnap = await getDocs(collection(db, 'students'));
-      setStudents(studentSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    };
-  
-    fetchStudents();
+    const unsubscribeStudents = onSnapshot(collection(db, 'students'), (snapshot) => {
+      const updatedStudents = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setStudents(updatedStudents);
+    });
   
     const userDocId = localStorage.getItem('userId');
     setCurrentUserId(userDocId);
@@ -54,11 +41,7 @@ export default function ViewClasses() {
       unsubscribeClasses();
       unsubscribeStudents();
     };
-  }, []);
-
-  const unsubscribeStudents = onSnapshot(collection(db, 'students'), (snapshot) => {
-    setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-  });  
+  }, []);   
 
   const handleViewStudents = (cls) => {
     const studentIds = Array.isArray(cls.students) ? cls.students : [];

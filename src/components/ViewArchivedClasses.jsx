@@ -56,7 +56,6 @@ export default function ViewArchivedClasses() {
   
     return () => {
         unsubscribeClasses();
-        unsubscribeStudents();
     }}, []);
 
   const handleViewStudents = (cls) => {
