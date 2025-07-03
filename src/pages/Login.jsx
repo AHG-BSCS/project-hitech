@@ -15,8 +15,6 @@ const BG_SETTINGS_KEY = 'cachedBgSettings';
 const LOGO_KEY = 'cachedLogoBase64';
 const LOGO_MODE_KEY = 'cachedLogoMode';
 
-<meta name="google-site-verification" content="ALVMrmoFCwrqfAfE66sBeG_RiFSve_w1H62DnJXby8c" />
-
 function LockedModal({ open, onClose }) {
   if (!open) return null;
   return (

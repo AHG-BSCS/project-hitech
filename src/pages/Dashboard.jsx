@@ -16,8 +16,6 @@ import ViewClasses from '../components/ViewClasses';
 import { useSystemSettings } from '../context/SystemSettingsContext';
 import { FaHome, FaUserGraduate, FaChalkboardTeacher, FaUsers, FaUserShield, FaCogs, FaCog, FaSchool } from 'react-icons/fa';
 
-<meta name="google-site-verification" content="ALVMrmoFCwrqfAfE66sBeG_RiFSve_w1H62DnJXby8c" />
-
 // The main Dashboard component
 export default function Dashboard() {
   const navigate = useNavigate();
