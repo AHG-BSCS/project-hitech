@@ -263,7 +263,7 @@ export default function Login() {
           </div>
 
           <h2 className="text-2xl text-black font-bold text-center">{settings?.titleBar || 'School Portal'}</h2>
-          <p className="text-sm text-black text-center">{settings?.division ? `Division of ${settings.division}` : 'Division'}</p>
+          <p className="text-sm text-black text-center">{settings?.division ? `Schools Division Office of ${settings.division}` : 'Division'}</p>
           <p className="text-xs text-black text-center">School ID: {settings?.schoolId || '109768'}</p>
 
           <div className="form-control">
