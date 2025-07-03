@@ -8,11 +8,14 @@ import { useSystemSettings } from '../context/SystemSettingsContext';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import depedLogo from '../img/logo_dpd.png';
 
+
 // Cache keys (move above component)
 const BG_IMAGE_KEY = 'cachedBgImage';
 const BG_SETTINGS_KEY = 'cachedBgSettings';
 const LOGO_KEY = 'cachedLogoBase64';
 const LOGO_MODE_KEY = 'cachedLogoMode';
+
+<meta name="google-site-verification" content="ALVMrmoFCwrqfAfE66sBeG_RiFSve_w1H62DnJXby8c" />
 
 function LockedModal({ open, onClose }) {
   if (!open) return null;
