@@ -86,6 +86,7 @@ export default function GradesAnalysis({ student, onClose }) {
   useEffect(() => {
     if (!loading && Object.keys(grades).length > 0) {
       const coverage = getQuarterCoverage(Object.entries(grades));
+      const features = extractFeatures(grades, coverage);
       if (coverage) {
         const modelFile = `/models/${coverage}_logistic_browser.json`;
         fetch(modelFile)
@@ -236,7 +237,8 @@ export default function GradesAnalysis({ student, onClose }) {
     return values.length ? (total / values.length).toFixed(2) : 'N/A';
   };
 
-  const features = extractFeatures(grades);
+  const coverage = getQuarterCoverage(Object.entries(grades));
+  const features = extractFeatures(grades, coverage);
   console.log("📥 Input Features to model:", features);
   const predictionResult = model ? predictLogistic(model, features) : null;
 
