@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, onSnapshot } from 'firebase/firestore';
 import ViewStudent from '../modals/ViewStudent';
 
 export default function ViewClasses() {
@@ -29,6 +29,36 @@ export default function ViewClasses() {
     const userDocId = localStorage.getItem('userId');
     setCurrentUserId(userDocId);
   }, []);
+
+  useEffect(() => {
+    const unsubscribeClasses = onSnapshot(collection(db, 'classes'), (snapshot) => {
+      const updatedClasses = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        status: doc.data().status || 'active'
+      }));
+      setClasses(updatedClasses);
+    });
+  
+    const fetchStudents = async () => {
+      const studentSnap = await getDocs(collection(db, 'students'));
+      setStudents(studentSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    };
+  
+    fetchStudents();
+  
+    const userDocId = localStorage.getItem('userId');
+    setCurrentUserId(userDocId);
+  
+    return () => {
+      unsubscribeClasses();
+      unsubscribeStudents();
+    };
+  }, []);
+
+  const unsubscribeStudents = onSnapshot(collection(db, 'students'), (snapshot) => {
+    setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  });  
 
   const handleViewStudents = (cls) => {
     const studentIds = Array.isArray(cls.students) ? cls.students : [];
