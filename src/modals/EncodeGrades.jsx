@@ -7,6 +7,7 @@ export default function EncodeGrades({ isOpen, onClose, classId, subjectId, sect
   const [grades, setGrades] = useState({});
   const [finalized, setFinalized] = useState(false);
   const [modal, setModal] = useState({ open: false, message: '', type: 'info' });
+  const [initialFinalized, setInitialFinalized] = useState({});
 
   const canManage = hasPermission(permissions, PERMISSIONS.MANAGE_GRADES);
   const canView = hasPermission(permissions, PERMISSIONS.ENCODE_GRADES);
@@ -21,14 +22,26 @@ export default function EncodeGrades({ isOpen, onClose, classId, subjectId, sect
   const fetchGrades = async () => {
     const snapshot = await getDocs(collection(db, 'grades'));
     const data = {};
+    const initialFinals = {};
+  
     snapshot.docs.forEach(docu => {
       const val = docu.data();
       if (val.classId === classId && val.subjectId === subjectId) {
         data[val.studentId] = val;
+  
+        // Track which checkboxes were finalized initially
+        initialFinals[val.studentId] = {
+          q1: val.q1?.finalized || false,
+          q2: val.q2?.finalized || false,
+          q3: val.q3?.finalized || false,
+          q4: val.q4?.finalized || false,
+        };
       }
     });
-
+  
     const formatted = {};
+    const initFinal = {};
+  
     students.forEach(stu => {
       formatted[stu.id] = data[stu.id] || {
         q1: { grade: '', finalized: false },
@@ -36,9 +49,18 @@ export default function EncodeGrades({ isOpen, onClose, classId, subjectId, sect
         q3: { grade: '', finalized: false },
         q4: { grade: '', finalized: false },
       };
+  
+      initFinal[stu.id] = initialFinals[stu.id] || {
+        q1: false,
+        q2: false,
+        q3: false,
+        q4: false,
+      };
     });
+  
     setGrades(formatted);
-  };
+    setInitialFinalized(initFinal);
+  };  
 
   const handleGradeChange = (studentId, quarter, value) => {
     setGrades(prev => ({
@@ -199,12 +221,12 @@ export default function EncodeGrades({ isOpen, onClose, classId, subjectId, sect
                             />
                         <div className="text-xs mt-1">
                           <label className='text-gray-800'>
-                            <input
-                              type="checkbox"
-                              checked={entry[q]?.finalized || false}
-                              onChange={() => handleToggleFinalized(stu.id, q)}
-                              disabled={!canManage}
-                            />
+                          <input
+                            type="checkbox"
+                            checked={entry[q]?.finalized || false}
+                            onChange={() => handleToggleFinalized(stu.id, q)}
+                            disabled={initialFinalized[stu.id]?.[q]}
+                          />
                             Finalized
                           </label>
                         </div>
