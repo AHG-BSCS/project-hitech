@@ -151,33 +151,33 @@ export default function ViewArchivedClasses() {
         <div className="h-[350px] overflow-y-auto border rounded shadow mt-4">
           <table className="table w-full text-sm text-left text-gray-700">
             <thead className="bg-gray-100 text-black sticky top-0 z-10">
-              <tr>
-                <th>Section Name</th>
-                <th>Grade Level</th>
-                <th>Adviser</th>
-                <th>School Year</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
+                <tr>
+                  <th className="w-[150px] px-4 py-2 text-center">Section Name</th>
+                  <th className="w-[50px] px-4 py-2 text-center">Grade Level</th>
+                  <th className="w-[450px] px-4 py-2 text-center">Adviser</th>
+                  <th className="w-[100px] px-4 py-2 text-center">School Year</th>
+                  <th className="w-[100px] px-4 py-2 text-center">Status</th>
+                  <th className="w-[100px] px-4 py-2 text-center">Action</th>
+                </tr>
             </thead>
             <tbody>
               {filteredClasses.map(cls => (
                 <tr key={cls.id} className="hover:bg-blue-100 hover:text-black">
-                  <td>{cls.sectionName}</td>
-                  <td>{cls.gradeLevel}</td>
-                  <td>{cls.adviser}</td>
-                  <td>{cls.schoolYear || '-'}</td>
-                  <td>
+                  <td className="w-[150px] px-4 py-2 text-center">{cls.sectionName}</td>
+                  <td className="w-[50px] px-4 py-2 text-center">{cls.gradeLevel}</td>
+                  <td className="w-[450px] px-4 py-2 text-center">{cls.adviser}</td>
+                  <td className="w-[100px] px-4 py-2 text-center">{cls.schoolYear || '-'}</td>
+                  <td className="w-[100px] px-4 py-2 text-center">
                     <span className="px-2 py-1 rounded text-xs font-semibold bg-gray-400 text-white">
                       Archived
                     </span>
                   </td>
-                  <td>
+                  <td className="w-[100px] px-4 py-2 text-center">
                     <button
                       onClick={() => { handleViewStudents(cls); setClass(cls); }}
                       className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
                     >
-                      View Students
+                      Students
                     </button>
                   </td>
                 </tr>

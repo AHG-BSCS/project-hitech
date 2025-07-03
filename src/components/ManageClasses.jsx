@@ -201,50 +201,44 @@ export default function ManageClasses({ permissions }) {
             value={searchClass}
             onChange={(e) => setSearchClass(e.target.value)}
           />
-
-          <div className="h-[350px] overflow-y-auto border rounded shadow">
-            <table className="table w-full text-sm text-left text-gray-700">
-              <thead className="bg-gray-100 text-black sticky top-0 z-10">
-                <tr>
-                  <th>Section Name</th>
-                  <th>Grade Level</th>
-                  <th>Adviser</th>
-                  <th>School Year</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
+          <div className="h-[350px] overflow-y-auto border rounded shadow mt-4">
+          <table className="table w-full text-sm text-left text-gray-700">
+            <thead className="bg-gray-100 text-black sticky top-0 z-10">
+              <tr>
+                <th className="w-[150px] px-4 py-2 text-center">Section Name</th>
+                <th className="w-[50px] px-4 py-2 text-center">Grade Level</th>
+                <th className="w-[450px] px-4 py-2 text-center">Adviser</th>
+                <th className="w-[100px] px-4 py-2 text-center">School Year</th>
+                <th className="w-[100px] px-4 py-2 text-center">Status</th>
+                <th className="w-[100px] px-4 py-2 text-center">Action</th>
+              </tr>
+            </thead>
               <tbody>
                 {filteredClasses
                   .filter(cls => cls.status !== 'archived')
-                  .filter(cls =>
-                    cls.gradeLevel?.toLowerCase().includes(searchClass.toLowerCase()) ||
-                    cls.sectionName?.toLowerCase().includes(searchClass.toLowerCase()) ||
-                    cls.adviser?.toLowerCase().includes(searchClass.toLowerCase())
-                  )
                   .map(cls => (
-                    <tr key={cls.id} className={`${actionClassId === cls.id ? 'bg-blue-200 text-black' : 'hover:bg-blue-100 hover:text-black'}`}>
-                      <td>{cls.sectionName}</td>
-                      <td>{cls.gradeLevel}</td>
-                      <td>{cls.adviser}</td>
-                      <td>{cls.schoolYear || '-'}</td>
-                      <td>
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${cls.status === 'archived' ? 'bg-gray-400 text-white' : 'bg-green-500 text-white'}`}>
+                    <tr key={cls.id} className="hover:bg-blue-100 hover:text-black relative">
+                      <td className="w-[150px] px-4 py-2 text-center">{cls.sectionName}</td>
+                      <td className="w-[50px] px-4 py-2 text-center">{cls.gradeLevel}</td>
+                      <td className="w-[450px] px-4 py-2 text-center">{cls.adviser}</td>
+                      <td className="w-[100px] px-4 py-2 text-center">{cls.schoolYear || '-'}</td>
+                      <td className="w-[100px] px-4 py-2 text-center">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${cls.status === 'archived' ? 'bg-gray-400' : 'bg-green-500'} text-white`}>
                           {cls.status === 'archived' ? 'Archived' : 'Active'}
                         </span>
                       </td>
-                      <td className="relative">
+                      <td className="relative text-center">
                         <button
-                          ref={el => (buttonRefs.current[cls.id] = el)}
                           onClick={() => toggleDropdown(cls.id)}
-                          className="text-xl px-2 py-1 rounded"
+                          ref={(el) => (buttonRefs.current[cls.id] = el)}
+                          className="px-2 py-1 text-xl"
                         >
                           ⋮
                         </button>
                         {actionClassId === cls.id && (
                           <div
                             ref={dropdownRef}
-                            className={`absolute ${dropUp ? 'bottom-full mb-2' : 'mt-2'} right-0 w-32 bg-white border rounded shadow-md z-10`}
+                            className={`absolute ${dropUp ? 'bottom-full mb-2' : 'top-full mt-2'} right-0 w-36 bg-white border rounded shadow-md z-10`}
                           >
                             {!isViewOnly && (
                               <>
@@ -276,19 +270,21 @@ export default function ManageClasses({ permissions }) {
                                 >
                                   Add Student
                                 </button>
+                              </>
+                            )}
                             <button
                               onClick={() => { handleViewStudents(cls); setActionClassId(null); }}
                               className="block w-full px-4 py-2 text-left text-blue-700 hover:bg-blue-100"
                             >
                               View Students
                             </button>
-                                <button
-                                  onClick={() => { handleArchiveClick(cls); }}
-                                  className={`block w-full px-4 py-2 text-left ${cls.status === 'archived' ? 'text-green-700 hover:bg-green-100' : 'text-gray-700 hover:bg-gray-100'}`}
-                                >
-                                  {cls.status === 'archived' ? 'Mark as Active' : 'Archive'}
-                                </button>
-                              </>
+                            {!isViewOnly && (
+                              <button
+                                onClick={() => { handleArchiveClick(cls); }}
+                                className={`block w-full px-4 py-2 text-left ${cls.status === 'archived' ? 'text-green-700 hover:bg-green-100' : 'text-gray-700 hover:bg-gray-100'}`}
+                              >
+                                {cls.status === 'archived' ? 'Mark as Active' : 'Archive'}
+                              </button>
                             )}
                           </div>
                         )}
