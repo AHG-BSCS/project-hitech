@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 import ManageClasses from '../components/ManageClasses';
 import ManageRoles from '../components/ManageRoles';
@@ -31,32 +31,43 @@ export default function Dashboard() {
   const { settings } = useSystemSettings();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
       if (!user) {
         navigate('/login');
-      } else {
-        const q = query(collection(db, 'users'), where('uid', '==', user.uid));
-        const querySnapshot = await getDocs(q);
+        return;
+      }
+  
+      const q = query(collection(db, 'users'), where('uid', '==', user.uid));
+      const unsubscribeUser = onSnapshot(q, (querySnapshot) => {
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
+  
           if (userData.isLocked) {
             setShowLockedModal(true);
-            await signOut(auth);
+            signOut(auth);
             localStorage.removeItem('employeeId');
             localStorage.removeItem('userId');
             localStorage.removeItem('isAuthenticated');
             return;
           }
+  
           setEmployeeId(userData.employeeId);
           localStorage.setItem('employeeId', userData.employeeId);
           localStorage.setItem('userId', auth.currentUser.uid);
           setPermissions(userData.permissions || 0);
           setUserRole(userData.role || '');
         }
-      }
-      setLoading(false);
+        setLoading(false);
+      });
+  
+      return () => {
+        unsubscribeUser();
+      };
     });
-    return () => unsubscribe();
+  
+    return () => {
+      unsubscribeAuth();
+    };
   }, [navigate]);
 
   const handleLogout = async () => {

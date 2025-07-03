@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 const SystemSettingsContext = createContext();
 
@@ -13,17 +13,22 @@ export function SystemSettingsProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      const docRef = doc(db, 'system', 'settings');
-      const docSnap = await getDoc(docRef);
+    const docRef = doc(db, 'system', 'settings');
+
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         setSettings(docSnap.data());
       } else {
         setSettings({});
       }
       setLoading(false);
-    };
-    fetchSettings();
+    }, (error) => {
+      console.error('Error fetching system settings:', error);
+      setSettings({});
+      setLoading(false);
+    });
+
+    return () => unsubscribe(); // Clean up on unmount
   }, []);
 
   return (

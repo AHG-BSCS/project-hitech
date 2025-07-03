@@ -110,7 +110,7 @@ const PortalSettings = () => {
     if (bgSettingsSnap.exists()) {
       const bgData = bgSettingsSnap.data();
       setBgType(bgData.bgType || 'color');
-      setBgValue(bgData.bgValue || '#f3f4f6');
+      setBgValue(bgData.bgValue || '');
     }
     // If background is image, load from separate doc
     if ((bgSettingsSnap.data()?.bgType || 'color') === 'image') {
@@ -151,12 +151,12 @@ const PortalSettings = () => {
 
   const handleBgChange = async (e) => {
     if (e.target.files && e.target.files[0]) {
-      setBgValue(e.target.files[0]);
-      const base64 = await fileToBase64Scaled(e.target.files[0]);
+      const file = e.target.files[0];
+      const base64 = await fileToBase64Scaled(file);
       setBgBase64(base64);
       setBgChanged(true);
     }
-  };
+  };  
 
   const handleSave = async () => {
     setLoading(true);
@@ -240,7 +240,6 @@ const PortalSettings = () => {
     setBgChanged(false);
     setUserDefaultPasswordPlain('');
     setTimeout(() => setSuccess(false), 2000);
-    window.location.reload();
   };
 
   return (
@@ -255,7 +254,7 @@ const PortalSettings = () => {
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               placeholder="Enter School Name"
-              value={schoolName}
+              value={schoolName || ''}
               onChange={e => setSchoolName(e.target.value)}
             />
           </div>
@@ -266,7 +265,7 @@ const PortalSettings = () => {
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               placeholder="Enter School ID"
-              value={schoolId}
+              value={schoolId || ''}
               onChange={e => setSchoolId(e.target.value)}
             />
           </div>
@@ -277,7 +276,7 @@ const PortalSettings = () => {
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               placeholder="Enter School Address"
-              value={schoolAddress}
+              value={schoolAddress || ''}
               onChange={e => setSchoolAddress(e.target.value)}
             />
           </div>
@@ -288,7 +287,7 @@ const PortalSettings = () => {
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               placeholder="Enter Contact Number"
-              value={contactNumber}
+              value={contactNumber || ''}
               onChange={e => setContactNumber(e.target.value)}
             />
           </div>
@@ -299,7 +298,7 @@ const PortalSettings = () => {
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               placeholder="Enter Principal Name"
-              value={principalName}
+              value={principalName || ''}
               onChange={e => setPrincipalName(e.target.value)}
             />
           </div>
@@ -310,7 +309,7 @@ const PortalSettings = () => {
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               placeholder="Enter Division Office"
-              value={division}
+              value={division || ''}
               onChange={e => setDivision(e.target.value)}
             />
           </div>
@@ -332,7 +331,7 @@ const PortalSettings = () => {
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               placeholder="Enter Region"
-              value={region}
+              value={region || ''}
               onChange={e => setRegion(e.target.value)}
             />
           </div>
@@ -369,7 +368,7 @@ const PortalSettings = () => {
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               placeholder="Enter default password for new users"
-              value={userDefaultPasswordPlain}
+              value={userDefaultPasswordPlain || ''}
               onChange={e => setUserDefaultPasswordPlain(e.target.value)}
             />
             <p className="text-xs text-gray-500 mt-1">This password will be assigned to new users in Manage Users. (Current hash: {userDefaultPassword ? 'Set' : 'Not set'})</p>
@@ -385,7 +384,7 @@ const PortalSettings = () => {
             <input
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={titleBar}
+              value={titleBar || ''}
               onChange={e => setTitleBar(e.target.value)}
               placeholder="Enter system title bar text"
             />
@@ -396,7 +395,7 @@ const PortalSettings = () => {
             <input
               type="color"
               className="w-16 h-10 p-0 border border-gray-300 bg-white"
-              value={colorPalette}
+              value={colorPalette || '#f3f4f6'}
               onChange={e => setColorPalette(e.target.value)}
             />
           </div>
@@ -416,38 +415,45 @@ const PortalSettings = () => {
           <div>
             <label className="block font-medium mb-1">Login Page Background</label>
             <div className="flex items-center gap-4 mb-2">
-              <label className="flex items-center gap-1">
-                <input
-                  type="radio"
-                  name="bgType"
-                  value="color"
-                  checked={bgType === 'color'}
-                  onChange={() => setBgType('color')}
-                />
-                Color
-              </label>
-              <label className="flex items-center gap-1">
-                <input
-                  type="radio"
-                  name="bgType"
-                  value="image"
-                  checked={bgType === 'image'}
-                  onChange={() => setBgType('image')}
-                />
-                Image
-              </label>
+            <label className="flex items-center gap-1">
+            <input
+              type="radio"
+              name="bgType"
+              value="color"
+              checked={bgType === 'color'}
+              onChange={() => {
+                setBgType('color');
+                setBgValue('#f3f4f6');
+              }}
+            />
+            Color
+          </label>
+          <label className="flex items-center gap-1">
+            <input
+              type="radio"
+              name="bgType"
+              value="image"
+              checked={bgType === 'image'}
+              onChange={() => {
+                setBgType('image');
+                setBgValue('');
+              }}
+            />
+            Image
+          </label>
             </div>
             {bgType === 'color' ? (
               <input
                 type="color"
                 className="w-16 h-10 p-0 border-none"
-                value={typeof bgValue === 'string' ? bgValue : '#f3f4f6'}
+                value={/^#[0-9A-Fa-f]{6}$/.test(bgValue) ? bgValue : '#f3f4f6'}
                 onChange={e => setBgValue(e.target.value)}
-              />
+              />       
             ) : (
               <input
                 type="file"
                 accept="image/*"
+                value={''}
                 onChange={handleBgChange}
                 className="bg-white text-sm file:border file:border-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-white file:text-gray-700"
               />
