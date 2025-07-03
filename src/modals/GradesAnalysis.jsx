@@ -139,9 +139,6 @@ export default function GradesAnalysis({ student, onClose }) {
       'Technology and Livelihood Education': 'TLE'
     };
   
-    // 👇 Ensure subject order matches Python training
-    const subjectOrder = ['Math', 'English', 'Science', 'Filipino', 'AP', 'TLE', 'ESP', 'MAPEH'];
-  
     const normalizedGrades = {};
     Object.entries(gradesBySubject).forEach(([name, val]) => {
       const alias = subjectAliases[name] || name;
@@ -196,31 +193,48 @@ export default function GradesAnalysis({ student, onClose }) {
     return rawFeatures;
   };  
 
-  const predictLogistic = (model, features) => {
+  const softmax = (logits) => {
+    const maxLogit = Math.max(...logits); // for numerical stability
+    const exps = logits.map(z => Math.exp(z - maxLogit));
+    const sumExps = exps.reduce((sum, val) => sum + val, 0);
+    return exps.map(e => e / sumExps);
+  };
+
+  const predictMulticlass = (model, features) => {
     if (
       !model || 
       !Array.isArray(model.coefficients) || 
-      typeof model.intercept !== 'number'
+      !Array.isArray(model.intercepts) ||
+      model.coefficients.length !== model.classes.length
     ) {
-      console.warn("Model weights not valid:", model?.coefficients, features);
+      console.warn("Invalid multiclass model structure.");
       return { class: "N/A", probability: 0 };
     }
-
-    if (features.length !== model.coefficients.length) {
-      console.warn("Model weights not matching feature length:", model.coefficients, features);
-      return { class: "N/A", probability: 0 };
-    }
-
-    const z = model.coefficients.reduce((sum, coef, i) => sum + coef * features[i], model.intercept);
-    const exp = Math.exp(z);
-    const probability = exp / (1 + exp);
-    const predictedClass = probability >= 0.5 ? model.classes[1] : model.classes[0];
-    console.log("📊 Prediction result:", {
-      class: predictedClass,
-      probability
+  
+    const logits = model.coefficients.map((weights, idx) => {
+      if (weights.length !== features.length) {
+        console.warn("Feature length mismatch.");
+        return -Infinity;
+      }
+      const z = weights.reduce((sum, w, i) => sum + w * features[i], model.intercepts[idx]);
+      return z;
     });
-
-    return { class: predictedClass, probability };
+  
+    const probs = softmax(logits);
+    const maxIdx = probs.indexOf(Math.max(...probs));
+    const predictedClass = model.classes[maxIdx];
+  
+    console.log("📊 Multiclass prediction:", {
+      logits,
+      probabilities: probs,
+      predictedClass
+    });
+  
+    return {
+      class: predictedClass,
+      probability: probs[maxIdx],
+      probabilities: probs
+    };
   };
 
   const getFinalFromGrade = (grade) => {
@@ -244,7 +258,7 @@ export default function GradesAnalysis({ student, onClose }) {
   const coverage = getQuarterCoverage(Object.entries(grades));
   const features = extractFeatures(grades, coverage);
   console.log("📥 Input Features to model:", features);
-  const predictionResult = model ? predictLogistic(model, features) : null;
+  const predictionResult = model ? predictMulticlass(model, features) : null;
 
   if (!student || loading) return null;
 
