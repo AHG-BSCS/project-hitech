@@ -139,6 +139,9 @@ export default function GradesAnalysis({ student, onClose }) {
       'Technology and Livelihood Education': 'TLE'
     };
   
+    // 👇 Ensure subject order matches Python training
+    const subjectOrder = ['Math', 'English', 'Science', 'Filipino', 'AP', 'TLE', 'ESP', 'MAPEH'];
+  
     const normalizedGrades = {};
     Object.entries(gradesBySubject).forEach(([name, val]) => {
       const alias = subjectAliases[name] || name;
@@ -149,11 +152,11 @@ export default function GradesAnalysis({ student, onClose }) {
   
     for (const q of quarters) {
       for (const subject of subjectOrder) {
-        const val = normalizedGrades[subject]?.[q];
-        const grade = typeof val === 'number'
-          ? val
-          : (typeof val === 'string' ? parseFloat(val) : 0);
-        allGrades.push(isNaN(grade) ? 0 : grade);
+        const raw = normalizedGrades[subject]?.[q];
+        const parsed = typeof raw === 'number'
+          ? raw
+          : (typeof raw === 'string' ? parseFloat(raw) : 0);
+        allGrades.push(isNaN(parsed) ? 0 : parsed);
       }
     }
   
@@ -165,29 +168,30 @@ export default function GradesAnalysis({ student, onClose }) {
     const rawFeatures = [sex, gradeLevel, ...allGrades, overallAvg];
     console.log("📥 Input features (pre-scaled):", rawFeatures);
   
+    // ⚖️ Scaling
     if (model?.scaler) {
       const { mean, scale } = model.scaler;
-    
+  
       if (!Array.isArray(mean) || !Array.isArray(scale)) {
-        console.warn("⚠️ Scaler mean/scale is not an array");
+        console.warn("⚠️ Scaler is invalid.");
         return rawFeatures;
       }
-    
+  
       if (mean.length !== rawFeatures.length || scale.length !== rawFeatures.length) {
         console.warn("⚠️ Scaler length mismatch:", {
-          featureLength: rawFeatures.length,
-          meanLength: mean.length,
-          scaleLength: scale.length
+          expected: rawFeatures.length,
+          mean: mean.length,
+          scale: scale.length
         });
         return rawFeatures;
       }
-    
+  
       const scaled = rawFeatures.map((x, i) =>
         scale[i] !== 0 ? (x - mean[i]) / scale[i] : 0
       );
       console.log("📊 Scaled features:", scaled);
       return scaled;
-    }    
+    }
   
     return rawFeatures;
   };  
