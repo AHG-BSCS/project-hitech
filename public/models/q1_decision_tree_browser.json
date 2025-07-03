@@ -1,0 +1,759 @@
+{
+  "model_type": "decision_tree",
+  "feature_names": [
+    "sex",
+    "grade_level",
+    "filipino_q1",
+    "english_q1",
+    "mathematics_q1",
+    "science_q1",
+    "ap_q1",
+    "esp_q1",
+    "tle_q1",
+    "mapeh_q1",
+    "q1_overall"
+  ],
+  "classes": [
+    "0",
+    "1",
+    "2"
+  ],
+  "nodes": [
+    {
+      "feature": 10,
+      "threshold": -0.9521721303462982,
+      "left": 1,
+      "right": 24,
+      "value": [
+        0.041666666666666664,
+        0.19444444444444445,
+        0.7638888888888888
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 5,
+      "threshold": -1.4856439232826233,
+      "left": 2,
+      "right": 3,
+      "value": [
+        0.18604651162790697,
+        0.7209302325581395,
+        0.09302325581395349
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 8,
+      "threshold": 0.0051783546805381775,
+      "left": 4,
+      "right": 21,
+      "value": [
+        0.10256410256410256,
+        0.7948717948717948,
+        0.10256410256410256
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 6,
+      "threshold": -0.4047430455684662,
+      "left": 5,
+      "right": 20,
+      "value": [
+        0.08333333333333333,
+        0.8611111111111112,
+        0.05555555555555555
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 4,
+      "threshold": -2.241547405719757,
+      "left": 6,
+      "right": 7,
+      "value": [
+        0.08571428571428572,
+        0.8857142857142857,
+        0.02857142857142857
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 8,
+      "threshold": -1.5927139520645142,
+      "left": 8,
+      "right": 15,
+      "value": [
+        0.058823529411764705,
+        0.9117647058823529,
+        0.029411764705882353
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 9,
+      "threshold": -1.4838454723358154,
+      "left": 9,
+      "right": 10,
+      "value": [
+        0.2857142857142857,
+        0.7142857142857143,
+        0.0
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 4,
+      "threshold": -1.4431655406951904,
+      "left": 11,
+      "right": 12,
+      "value": [
+        0.16666666666666666,
+        0.8333333333333334,
+        0.0
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 6,
+      "threshold": -1.1332805156707764,
+      "left": 13,
+      "right": 14,
+      "value": [
+        0.3333333333333333,
+        0.6666666666666666,
+        0.0
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 2,
+      "threshold": -0.3104478120803833,
+      "left": 16,
+      "right": 17,
+      "value": [
+        0.0,
+        0.9629629629629629,
+        0.037037037037037035
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 4,
+      "threshold": -0.8222019076347351,
+      "left": 18,
+      "right": 19,
+      "value": [
+        0.0,
+        0.8333333333333334,
+        0.16666666666666666
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 2,
+      "threshold": -0.6383535489439964,
+      "left": 22,
+      "right": 23,
+      "value": [
+        0.3333333333333333,
+        0.0,
+        0.6666666666666666
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 6,
+      "threshold": -0.7690117955207825,
+      "left": 25,
+      "right": 42,
+      "value": [
+        0.005780346820809248,
+        0.06358381502890173,
+        0.930635838150289
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 9,
+      "threshold": -0.5553674250841141,
+      "left": 26,
+      "right": 31,
+      "value": [
+        0.0,
+        0.2857142857142857,
+        0.7142857142857143
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 4,
+      "threshold": -0.5560746192932129,
+      "left": 27,
+      "right": 30,
+      "value": [
+        0.0,
+        0.625,
+        0.375
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 7,
+      "threshold": -0.2573208063840866,
+      "left": 28,
+      "right": 29,
+      "value": [
+        0.0,
+        0.25,
+        0.75
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 7,
+      "threshold": 1.1863491535186768,
+      "left": 32,
+      "right": 41,
+      "value": [
+        0.0,
+        0.15,
+        0.85
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 9,
+      "threshold": 0.7445018589496613,
+      "left": 33,
+      "right": 38,
+      "value": [
+        0.0,
+        0.10526315789473684,
+        0.8947368421052632
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 9,
+      "threshold": -0.1839762143790722,
+      "left": 34,
+      "right": 37,
+      "value": [
+        0.0,
+        0.058823529411764705,
+        0.9411764705882353
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 7,
+      "threshold": -0.5280089378356934,
+      "left": 35,
+      "right": 36,
+      "value": [
+        0.0,
+        0.3333333333333333,
+        0.6666666666666666
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 3,
+      "threshold": -0.26448509842157364,
+      "left": 39,
+      "right": 40,
+      "value": [
+        0.0,
+        0.5,
+        0.5
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 3,
+      "threshold": -1.164795458316803,
+      "left": 43,
+      "right": 46,
+      "value": [
+        0.006896551724137931,
+        0.020689655172413793,
+        0.9724137931034482
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 5,
+      "threshold": -0.5238210335373878,
+      "left": 44,
+      "right": 45,
+      "value": [
+        0.0,
+        0.5,
+        0.5
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 8,
+      "threshold": -1.432924747467041,
+      "left": 47,
+      "right": 50,
+      "value": [
+        0.006993006993006993,
+        0.013986013986013986,
+        0.9790209790209791
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 2,
+      "threshold": -0.39242425188422203,
+      "left": 48,
+      "right": 49,
+      "value": [
+        0.0,
+        0.3333333333333333,
+        0.6666666666666666
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 4,
+      "threshold": -1.0883291959762573,
+      "left": 51,
+      "right": 54,
+      "value": [
+        0.007142857142857143,
+        0.007142857142857143,
+        0.9857142857142858
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 6,
+      "threshold": 0.05059288442134857,
+      "left": 52,
+      "right": 53,
+      "value": [
+        0.0,
+        0.14285714285714285,
+        0.8571428571428571
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": 7,
+      "threshold": -0.6182383000850677,
+      "left": 55,
+      "right": 58,
+      "value": [
+        0.007518796992481203,
+        0.0,
+        0.9924812030075187
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": 9,
+      "threshold": 0.5588062554597855,
+      "left": 56,
+      "right": 57,
+      "value": [
+        0.06666666666666667,
+        0.0,
+        0.9333333333333333
+      ],
+      "is_leaf": 0
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "is_leaf": 1
+    },
+    {
+      "feature": null,
+      "threshold": null,
+      "left": -1,
+      "right": -1,
+      "value": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "is_leaf": 1
+    }
+  ],
+  "scaler": {
+    "mean": [
+      0.4722222222222222,
+      8.402777777777779,
+      83.39351851851852,
+      83.61574074074075,
+      82.63425925925925,
+      82.99537037037037,
+      82.72222222222223,
+      83.92592592592592,
+      82.4675925925926,
+      83.49074074074075,
+      83.15567129629629
+    ],
+    "scale": [
+      0.4992277987669841,
+      1.1862607243657861,
+      6.099313457846258,
+      6.109004617306008,
+      5.636400579123187,
+      5.718308547167035,
+      5.490451869235815,
+      5.541432666243724,
+      6.258243877208031,
+      5.385156846937512,
+      4.955166438538724
+    ]
+  }
+}
