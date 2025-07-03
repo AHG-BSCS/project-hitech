@@ -31,6 +31,7 @@ export default function ManageClasses({ permissions }) {
   const [classToArchive, setClassToArchive] = useState(null);
   const [showManageTeachersModal, setShowManageTeachersModal] = useState(false);
   const [selectedClassForTeachers, setSelectedClassForTeachers] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(''); // For archived classes filter
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -299,7 +300,17 @@ export default function ManageClasses({ permissions }) {
         </div>
       </Section>
 
-      {/* Archived Classes Section */}
+      {showModal && (
+        <RegisterClassModal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          onSaved={() => setRefresh(r => !r)}
+          initialData={editData}
+          users={users}
+        />
+      )}
+
+      {/* Archived Classes Section - Moved to bottom */}
       <Section title="Archived Classes">
         {(() => {
           // Group archived classes by school year
@@ -316,49 +327,83 @@ export default function ManageClasses({ permissions }) {
             if (b === 'Unknown Year') return -1;
             return b.localeCompare(a);
           });
+          
           if (years.length === 0) {
             return <div className="text-gray-500">No archived classes.</div>;
           }
+
+          // Filter classes by selected year
+          const classesToShow = selectedYear 
+            ? grouped[selectedYear] || []
+            : [];
+
           return (
-            <div className="flex flex-row gap-8 overflow-x-auto pb-2">
-              {years.map(year => {
-                const archivedClasses = grouped[year];
-                // Chunk into rows of 2
-                const rows = [];
-                for (let i = 0; i < archivedClasses.length; i += 2) {
-                  rows.push(archivedClasses.slice(i, i + 2));
-                }
-                return (
-                  <div key={year} className="min-w-[340px] flex-shrink-0">
-                    <h3 className="font-bold text-md mb-2 text-center">{year}</h3>
-                    <div className="flex flex-col gap-4">
-                      {rows.map((row, idx) => (
-                        <div key={idx} className="flex flex-row gap-4">
-                          {row.map(cls => (
-                            <div
-                              key={cls.id}
-                              className="bg-gray-100 rounded-lg shadow p-4 w-full max-w-xs flex flex-col gap-2 border border-gray-300"
-                            >
-                              <div className="flex flex-col gap-1">
-                                <span className="font-semibold text-lg text-black">{cls.sectionName}</span>
-                                <span className="text-sm text-gray-700">Grade: {cls.gradeLevel}</span>
-                                <span className="text-sm text-gray-700">Adviser: {cls.adviser}</span>
-                                <span className="text-xs text-gray-500">School Year: {cls.schoolYear || '-'}</span>
-                              </div>
-                              <button
-                                className="mt-2 px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow"
-                                onClick={() => { handleViewStudents(cls); }}
-                              >
-                                View Students
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
+            <div className="space-y-4">
+              {/* Year Filter Buttons */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  onClick={() => setSelectedYear('')}
+                  className={`px-4 py-2 rounded font-medium transition-colors ${
+                    selectedYear === '' 
+                      ? 'bg-gray-400 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Select Year
+                </button>
+                {years.map(year => (
+                  <button
+                    key={year}
+                    onClick={() => setSelectedYear(year)}
+                    className={`px-4 py-2 rounded font-medium transition-colors ${
+                      selectedYear === year 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                    }`}
+                  >
+                    {year} ({grouped[year].length})
+                  </button>
+                ))}
+              </div>
+
+              {/* Display message when no year is selected */}
+              {!selectedYear && (
+                <div className="text-gray-500 text-center py-8">
+                  Select a school year to view archived classes.
+                </div>
+              )}
+
+              {/* Display classes for selected year */}
+              {selectedYear && classesToShow.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {classesToShow.map(cls => (
+                    <div
+                      key={cls.id}
+                      className="bg-gray-100 rounded-lg shadow p-4 flex flex-col gap-2 border border-gray-300"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <span className="font-semibold text-lg text-black">{cls.sectionName}</span>
+                        <span className="text-sm text-gray-700">Grade: {cls.gradeLevel}</span>
+                        <span className="text-sm text-gray-700">Adviser: {cls.adviser}</span>
+                        <span className="text-xs text-gray-500">School Year: {cls.schoolYear || '-'}</span>
+                      </div>
+                      <button
+                        className="mt-2 px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow"
+                        onClick={() => { handleViewStudents(cls); }}
+                      >
+                        View Students
+                      </button>
                     </div>
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+              )}
+
+              {/* Display message when selected year has no classes */}
+              {selectedYear && classesToShow.length === 0 && (
+                <div className="text-gray-500 text-center py-8">
+                  No archived classes found for {selectedYear}.
+                </div>
+              )}
             </div>
           );
         })()}
