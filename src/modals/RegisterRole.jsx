@@ -59,7 +59,7 @@ const getPermissionTooltipText = () => {
   ].join('\n');
 };
 
-export default function RegisterRole({ open, onClose, refreshRoles, editRole }) {
+export default function RegisterRole({ open, onClose, editRole }) {
   const [roleName, setRoleName] = useState('');
   const [permissions, setPermissions] = useState(0);
   const [permissionInput, setPermissionInput] = useState('0');
@@ -186,10 +186,6 @@ export default function RegisterRole({ open, onClose, refreshRoles, editRole }) 
       setRoleName('');
       setPermissionInput('0');
       setPermissions(0);
-
-      if (typeof refreshRoles === 'function') {
-        refreshRoles();
-      }
       
       // Close modal after a short delay to show the success message
       setTimeout(() => {

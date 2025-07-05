@@ -15,7 +15,7 @@ import {
 } from 'firebase/firestore';
 import bcrypt from 'bcryptjs';
 
-export default function RegisterUser({ open, onClose, refreshUsers, editUser }) {
+export default function RegisterUser({ open, onClose, editUser }) {
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -122,7 +122,6 @@ export default function RegisterUser({ open, onClose, refreshUsers, editUser }) 
           permissions: roleObj.permission,
         }, { merge: true });
         setMessage('✅ User updated successfully!');
-        if (typeof refreshUsers === 'function') refreshUsers();
       } else {
         let password = 'hitech123';
         if (defaultPasswordPlain) {
@@ -190,10 +189,6 @@ export default function RegisterUser({ open, onClose, refreshUsers, editUser }) 
 
         setForm({ name: '', email: '', employeeId: '', role: '' });
         setMessage(`✅ User added successfully!`);
-
-        if (typeof refreshUsers === 'function') {
-          refreshUsers();
-        }
       }
     } catch (err) {
       console.error('Registration failed:', err);

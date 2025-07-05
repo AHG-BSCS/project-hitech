@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../firebase';
-import { collection, getDocs, deleteDoc, doc, updateDoc, addDoc } from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, doc, updateDoc, addDoc } from 'firebase/firestore';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
+import { usePermissions } from '../context/PermissionsContext';
 
-export default function ManageSubjects({ permissions }) {
+export default function ManageSubjects() {
   const [subjects, setSubjects] = useState([]);
   const [users, setUsers] = useState([]);
   const [searchSubject, setSearchSubject] = useState('');
@@ -17,25 +18,26 @@ export default function ManageSubjects({ permissions }) {
   const [currentUserId, setCurrentUserId] = useState('');
   const [currentUserEmail, setCurrentUserEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const { permissions } = usePermissions();
 
   // Modal form state
   const [subjectName, setSubjectName] = useState('');
 
   useEffect(() => {
-    const fetchSubjects = async () => {
-      const snapshot = await getDocs(collection(db, 'subjects'));
+    const unsubscribe = onSnapshot(collection(db, 'subjects'), (snapshot) => {
       setSubjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    };
-    fetchSubjects();
-  }, [refresh]);
+    });
+  
+    return () => unsubscribe();
+  }, []);  
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const snapshot = await getDocs(collection(db, 'users'));
+    const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
       setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    };
-    fetchUsers();
-  }, []);
+    });
+  
+    return () => unsubscribe();
+  }, []);  
 
   useEffect(() => {
     const empId = localStorage.getItem('employeeId') || '';

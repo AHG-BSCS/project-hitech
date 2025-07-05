@@ -2,10 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import {
   collection,
-  getDocs,
   doc,
   setDoc,
-  updateDoc,
+  onSnapshot,
   deleteDoc,
   getDoc,
 } from 'firebase/firestore';
@@ -26,6 +25,10 @@ export default function ManageTeachersModal({ open, onClose, classId }) {
   useEffect(() => {
     if (!open || !classId) return;
   
+    let unsubscribeSubjects;
+    let unsubscribeUsers;
+    let unsubscribeAssignments;
+  
     const initialize = async () => {
       setSubjects([]);
       setAssignments([]);
@@ -34,57 +37,61 @@ export default function ManageTeachersModal({ open, onClose, classId }) {
       setSearchResults({});
       setRemovedSubjectIds([]);
       setSelectedSubjectId('');
-      setClassMeta(null); // Reset
+      setClassMeta(null);
   
-      // 1. Get the class metadata from the class document
       const classRef = doc(db, 'classes', classId);
       const classSnap = await getDoc(classRef);
-      if (classSnap.exists()) {
-        const data = classSnap.data();
-        const { gradeLevel, sectionName, schoolYear } = data;
-        setClassMeta({ gradeLevel, sectionName, schoolYear });
-      } else {
+      if (!classSnap.exists()) {
         setMessage('❌ Class not found');
         return;
       }
   
-      // 2. Load subjects and users
-      const [subjectsSnap, usersSnap] = await Promise.all([
-        getDocs(collection(db, 'subjects')),
-        getDocs(collection(db, 'users')),
-      ]);
-      const subjectsList = subjectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const usersList = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const classData = classSnap.data();
+      const { gradeLevel, sectionName, schoolYear } = classData;
+      setClassMeta({ gradeLevel, sectionName, schoolYear });
   
-      setAllSubjects(subjectsList);
-      setUsers(usersList);
+      unsubscribeSubjects = onSnapshot(collection(db, 'subjects'), (snapshot) => {
+        const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setAllSubjects(list);
+      });
   
-      // 3. Load assignments for this class
-      const assignmentsSnap = await getDocs(collection(db, 'subjectAssignments'));
-      const filteredAssignments = assignmentsSnap.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(a =>
-          a.gradeLevel === classSnap.data().gradeLevel &&
-          a.sectionName === classSnap.data().sectionName &&
-          a.schoolYear === classSnap.data().schoolYear
+      unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+        const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setUsers(list);
+      });
+  
+      unsubscribeAssignments = onSnapshot(collection(db, 'subjectAssignments'), (snapshot) => {
+        const allAssignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const filtered = allAssignments.filter(
+          a =>
+            a.gradeLevel === gradeLevel &&
+            a.sectionName === sectionName &&
+            a.schoolYear === schoolYear
         );
   
-      const subjectIds = filteredAssignments.map(a => a.subjectId);
-      const matchedSubjects = subjectsList.filter(s => subjectIds.includes(s.id));
-      setSubjects(matchedSubjects);
+        const subjectIds = filtered.map(a => a.subjectId);
+        const uniqueSubjects = allSubjects.filter(s => subjectIds.includes(s.id));
+        setSubjects(uniqueSubjects);
   
-      const mappedAssignments = filteredAssignments.map(a => ({
-        subjectId: a.subjectId,
-        teacher: {
-          id: a.teacherId,
-          name: a.teacherName,
-          employeeId: a.teacherEmployeeId,
-        },
-      }));
-      setAssignments(mappedAssignments);
+        const mapped = filtered.map(a => ({
+          subjectId: a.subjectId,
+          teacher: {
+            id: a.teacherId,
+            name: a.teacherName,
+            employeeId: a.teacherEmployeeId,
+          },
+        }));
+        setAssignments(mapped);
+      });
     };
   
     initialize();
+  
+    return () => {
+      unsubscribeSubjects?.();
+      unsubscribeUsers?.();
+      unsubscribeAssignments?.();
+    };
   }, [open, classId]);  
 
   const handleAddSubject = () => {

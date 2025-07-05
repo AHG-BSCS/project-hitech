@@ -5,7 +5,7 @@ import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import { generateSF9 } from '../utils/generateSF9';
 import { generateSF10 } from '../utils/generateSF10';
 
-export default function RegisterStudent({ open, onClose, refreshStudents, studentToEdit, viewOnly = false }) {
+export default function RegisterStudent({ open, onClose, studentToEdit, viewOnly = false }) {
   const [learningReferenceNumber, setLRN] = useState('');
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
@@ -81,7 +81,6 @@ export default function RegisterStudent({ open, onClose, refreshStudents, studen
       setBirthdate('');
       setSex('');
 
-      refreshStudents();
     } catch (error) {
       console.error('Error saving student:', error);
       setMessage('❌ Failed to save student.');

@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import PERMISSIONS, { hasPermission, ALL_PERMISSIONS_VALUE } from '../modules/Permissions';
 import RegisterRole from '../modals/RegisterRole';
+import { usePermissions } from '../context/PermissionsContext';
 
-export default function ManageRoles({ permissions }) {
+export default function ManageRoles() {
   const [roles, setRoles] = useState([]);
   const [searchUser, setSearchUser] = useState('');
   const [actionUserId, setActionUserId] = useState(null);
@@ -13,16 +14,16 @@ export default function ManageRoles({ permissions }) {
   const dropdownRef = useRef(null); // NEW: ref for dropdown
   const [showRegisterRoleModal, setShowRegisterRoleModal] = useState(false);
   const [editRole, setEditRole] = useState(null); // NEW: Track role being edited
+  const { permissions } = usePermissions();
 
   useEffect(() => {
-    fetchRoles();
-  }, []);
+    const unsubscribe = onSnapshot(collection(db, 'roles'), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRoles(data);
+    });
   
-  const fetchRoles = async () => {
-    const snapshot = await getDocs(collection(db, 'roles'));
-    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setRoles(data);
-  };
+    return () => unsubscribe();
+  }, []);
 
   const getPermissionNames = (permissionInt) => {
     if (permissionInt === 0) return 'All Permissions';
@@ -38,7 +39,6 @@ export default function ManageRoles({ permissions }) {
   
     try {
       await deleteDoc(doc(db, 'roles', roleId));
-      fetchRoles();
     } catch (error) {
       console.error('Error deleting role:', error);
       alert('Failed to delete role.');
@@ -176,10 +176,12 @@ export default function ManageRoles({ permissions }) {
       {showRegisterRoleModal && (
         <RegisterRole
           open={showRegisterRoleModal}
-          onClose={() => { setShowRegisterRoleModal(false); setEditRole(null); }}
-          refreshRoles={fetchRoles}
-          editRole={editRole} // Pass role to edit
-        />
+          onClose={() => {
+            setShowRegisterRoleModal(false);
+            setEditRole(null);
+          }}
+          editRole={editRole}
+        />      
       )}
     </div>
   );

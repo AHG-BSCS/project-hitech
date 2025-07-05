@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
+import PERMISSIONS, { hasPermission } from '../modules/Permissions';
+import { usePermissions } from '../context/PermissionsContext';
 
 export default function AddStudentToClassModal({ open, onClose, classData, students, onStudentAdded, allClassStudentIds = [] }) {
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
@@ -9,6 +11,7 @@ export default function AddStudentToClassModal({ open, onClose, classData, stude
   const [search, setSearch] = useState('');
   const [schoolYear, setSchoolYear] = useState('');
   const [gradeLevel, setGradeLevel] = useState('');
+  const { permissions } = usePermissions();
 
   if (!open || !classData) return null;
 
@@ -67,6 +70,25 @@ export default function AddStudentToClassModal({ open, onClose, classData, stude
       (s.learningReferenceNumber && s.learningReferenceNumber.toString().includes(searchLower))
     );
   });
+
+  if (!hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS)) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md text-center">
+          <h2 className="text-xl font-bold text-red-600 mb-2">Access Denied</h2>
+          <p className="text-gray-700">You do not have permission to manage teacher assignments.</p>
+          <div className="mt-4">
+            <button
+              onClick={onClose}
+              className="btn bg-gray-300 hover:bg-gray-400 text-black"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }  
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">

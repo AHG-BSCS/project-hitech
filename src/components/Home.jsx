@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../firebase';
-import { collection, getCountFromServer, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const OVERVIEW = [
@@ -40,50 +40,45 @@ export default function DashboardHome() {
   const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
-    const fetchCounts = async () => {
-      setLoading(true);
-      const results = await Promise.all(
-        OVERVIEW.map(async ({ collection: col }) => {
-          try {
-            const snap = await getCountFromServer(collection(db, col));
-            return snap.data().count;
-          } catch {
-            return 0;
-          }
-        })
-      );
-      const newStats = {};
-      OVERVIEW.forEach((item, idx) => {
-        newStats[item.title] = results[idx];
+    const unsubscribes = [];
+  
+    setLoading(true);
+  
+    // Live counts
+    OVERVIEW.forEach(({ title, collection: col }) => {
+      const unsubscribe = onSnapshot(collection(db, col), (snapshot) => {
+        setStats(prev => ({ ...prev, [title]: snapshot.size }));
       });
-      setStats(newStats);
+      unsubscribes.push(unsubscribe);
+    });
+  
+    // Live chart data
+    const unsubscribeChart = onSnapshot(collection(db, 'students'), (snapshot) => {
+      const data = {};
+  
+      snapshot.forEach(doc => {
+        const student = doc.data();
+        const year = student.schoolYear || 'Unknown';
+        const grade = student.gradeLevel || 'Unknown';
+  
+        if (!data[year]) data[year] = { schoolYear: year, total: 0 };
+        data[year].total += 1;
+  
+        if (!data[year][grade]) data[year][grade] = 0;
+        data[year][grade] += 1;
+      });
+  
+      const sortedData = Object.values(data).sort((a, b) => a.schoolYear.localeCompare(b.schoolYear));
+      setChartData(sortedData);
       setLoading(false);
-
-      const fetchChartData = async () => {
-        const snapshot = await getDocs(collection(db, 'students'));
-        const data = {};
-      
-        snapshot.forEach(doc => {
-          const student = doc.data();
-          const year = student.schoolYear || 'Unknown';
-          const grade = student.gradeLevel || 'Unknown';
-      
-          if (!data[year]) data[year] = { schoolYear: year, total: 0 };
-          data[year].total += 1;
-      
-          if (!data[year][grade]) data[year][grade] = 0;
-          data[year][grade] += 1;
-        });
-      
-        // Convert object to sorted array by schoolYear
-        const sortedData = Object.values(data).sort((a, b) => a.schoolYear.localeCompare(b.schoolYear));
-        setChartData(sortedData);
-      };
-      
-      fetchChartData();      
+    });
+  
+    unsubscribes.push(unsubscribeChart);
+  
+    return () => {
+      unsubscribes.forEach(unsub => unsub());
     };
-    fetchCounts();
-  }, []);
+  }, []);  
 
   return (
     <>

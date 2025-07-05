@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, setDoc, doc } from 'firebase/firestore';
+import PERMISSIONS, { hasPermission } from '../modules/Permissions';
+import { usePermissions } from '../context/PermissionsContext';
 
 export default function RegisterClassModal({ open, onClose, onSaved, initialData, users = [] }) {
   const [gradeLevel, setGradeLevel] = useState('');
@@ -12,6 +14,7 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
   const [adviserDropdownOpen, setAdviserDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const { permissions } = usePermissions();
 
   useEffect(() => {
     if (open) {
@@ -79,6 +82,25 @@ export default function RegisterClassModal({ open, onClose, onSaved, initialData
   const schoolYearOptions = getSchoolYearOptions();
 
   if (!open) return null;
+  
+  if (!hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES)) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md text-center">
+          <h2 className="text-xl font-bold text-red-600 mb-2">Access Denied</h2>
+          <p className="text-gray-700">You do not have permission to manage classes.</p>
+          <div className="mt-4">
+            <button
+              onClick={onClose}
+              className="btn bg-gray-300 hover:bg-gray-400 text-black"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">

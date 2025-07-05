@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { getDocs, collection, doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
+import { usePermissions } from '../context/PermissionsContext';
 
-export default function EncodeGrades({ isOpen, onClose, classId, subjectId, sectionName, subjectName, students, permissions }) {
+export default function EncodeGrades({ isOpen, onClose, classId, subjectId, sectionName, subjectName, students }) {
   const [grades, setGrades] = useState({});
   const [finalized, setFinalized] = useState(false);
   const [modal, setModal] = useState({ open: false, message: '', type: 'info' });
   const [initialFinalized, setInitialFinalized] = useState({});
+  const { permissions } = usePermissions();
 
   const canManage = hasPermission(permissions, PERMISSIONS.MANAGE_GRADES);
   const canView = hasPermission(permissions, PERMISSIONS.ENCODE_GRADES);

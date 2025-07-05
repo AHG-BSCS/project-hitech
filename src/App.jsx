@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
-import ManageStudents from './components/ManageStudents';
+import { PermissionsProvider } from './context/PermissionsContext';
 import { useSystemSettings } from './context/SystemSettingsContext';
 import { useEffect } from 'react';
 
@@ -30,26 +30,28 @@ function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        {/* Catch-all route for invalid paths */}
-        <Route
-          path="*"
-          element={
-            isAuthenticated ? <Navigate to="/home" replace /> : <Navigate to="/" replace />
-          }
-        />
-      </Routes>
-    </Router>
+    <PermissionsProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          {/* Catch-all route for invalid paths */}
+          <Route
+            path="*"
+            element={
+              isAuthenticated ? <Navigate to="/home" replace /> : <Navigate to="/" replace />
+            }
+          />
+        </Routes>
+      </Router>
+    </PermissionsProvider>
   );
 }
 

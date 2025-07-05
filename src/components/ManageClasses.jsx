@@ -6,8 +6,9 @@ import ManageTeachers from '../modals/ManageTeachers';
 import AddStudentToClassModal from '../modals/AddStudentToClassModal';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 import ViewArchivedClasses from './ViewArchivedClasses';
+import { usePermissions } from '../context/PermissionsContext';
 
-export default function ManageClasses({ permissions }) {
+export default function ManageClasses() {
   const [classes, setClasses] = useState([]);
   const [searchClass, setSearchClass] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -33,6 +34,7 @@ export default function ManageClasses({ permissions }) {
   const [showManageTeachersModal, setShowManageTeachersModal] = useState(false);
   const [selectedClassForTeachers, setSelectedClassForTeachers] = useState(null);
   const [selectedYear, setSelectedYear] = useState(''); // For archived classes filter
+  const { permissions } = usePermissions();
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -309,14 +311,6 @@ export default function ManageClasses({ permissions }) {
 
       {/* Archived Classes Section - Moved to bottom */}
       <ViewArchivedClasses></ViewArchivedClasses>
-
-      <RegisterClassModal
-        open={showModal}
-        onClose={() => setShowModal(false)}
-        onSaved={() => setRefresh(r => !r)}
-        initialData={editData}
-        users={users}
-      />
 
       {showManageTeachersModal && selectedClassForTeachers && (
         <ManageTeachers

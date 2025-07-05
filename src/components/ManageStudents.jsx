@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 import RegisterStudent from '../modals/RegisterStudent';
 import { handleGenerateSF9WithAdviser } from '../utils/handleGenerateSF9WithAdviser';
+import { usePermissions } from '../context/PermissionsContext';
 
-export default function ManageStudents({ permissions }) {
+export default function ManageStudents() {
   const [students, setStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [actionStudentId, setActionStudentId] = useState(null);
@@ -15,16 +16,16 @@ export default function ManageStudents({ permissions }) {
   const [showRegisterStudentModal, setShowRegisterStudentModal] = useState(false);
   const [studentToEdit, setStudentToEdit] = useState(null);
   const [viewOnly, setViewOnly] = useState(false);
+  const { permissions } = usePermissions();
 
   useEffect(() => {
-    fetchStudents();
+    const unsubscribe = onSnapshot(collection(db, 'students'), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setStudents(data);
+    });
+  
+    return () => unsubscribe();
   }, []);
-
-  const fetchStudents = async () => {
-    const snapshot = await getDocs(collection(db, 'students'));
-    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setStudents(data);
-  };
 
   const handleDeleteStudent = async (studentId) => {
     const confirm = window.confirm('Are you sure you want to delete this student?');
@@ -32,7 +33,6 @@ export default function ManageStudents({ permissions }) {
 
     try {
       await deleteDoc(doc(db, 'students', studentId));
-      fetchStudents();
     } catch (error) {
       console.error('Error deleting student:', error);
       alert('Failed to delete student.');
@@ -220,7 +220,6 @@ export default function ManageStudents({ permissions }) {
             setStudentToEdit(null);
             setViewOnly(false);
           }}
-          refreshStudents={fetchStudents}
           studentToEdit={studentToEdit}
           viewOnly={viewOnly}
         />             

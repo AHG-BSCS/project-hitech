@@ -14,6 +14,7 @@ import ManageSubjects from '../components/ManageSubjects';
 import ManageGrades from '../components/ManageGrades';
 import ViewClasses from '../components/ViewClasses';
 import { useSystemSettings } from '../context/SystemSettingsContext';
+import { usePermissions } from '../context/PermissionsContext';
 import { FaHome, FaUserGraduate, FaChalkboardTeacher, FaUsers, FaUserShield, FaCogs, FaCog, FaSchool } from 'react-icons/fa';
 
 // The main Dashboard component
@@ -23,12 +24,10 @@ export default function Dashboard() {
   const [employeeId, setEmployeeId] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectValue, setSelectValue] = useState('');
-  const [permissions, setPermissions] = useState(0);
   const [searchSidebar, setSearchSidebar] = useState('');
-  const [userRole, setUserRole] = useState('');
-  const [loading, setLoading] = useState(true);
   const [showLockedModal, setShowLockedModal] = useState(false);
   const { settings } = useSystemSettings();
+  const { permissions, userRole, loading } = usePermissions();
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
@@ -54,10 +53,7 @@ export default function Dashboard() {
           setEmployeeId(userData.employeeId);
           localStorage.setItem('employeeId', userData.employeeId);
           localStorage.setItem('userId', auth.currentUser.uid);
-          setPermissions(userData.permissions || 0);
-          setUserRole(userData.role || '');
         }
-        setLoading(false);
       });
   
       return () => {
@@ -75,7 +71,7 @@ export default function Dashboard() {
     localStorage.removeItem('employeeId');
     localStorage.removeItem('userId');
     localStorage.removeItem('isAuthenticated');
-    window.location.href = '/';
+    window.location.href = '/login';
   };
 
   const handleSelectChange = (e) => {
@@ -264,12 +260,12 @@ export default function Dashboard() {
             <Route path="home" element={<Home />} />
             <Route path="student_info" element={
               hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS) || hasPermission(permissions, PERMISSIONS.VIEW_STUDENTS)
-                ? <ManageStudents permissions={permissions} />
+                ? <ManageStudents />
                 : <NotAuthorized />
             } />
             <Route path="users" element={
               hasPermission(permissions, PERMISSIONS.MANAGE_USERS) || hasPermission(permissions, PERMISSIONS.VIEW_USERS)
-                ? <ManageUsers permissions={permissions} />
+                ? <ManageUsers />
                 : <NotAuthorized />
             } />
             <Route path="roles" element={requirePermission(PERMISSIONS.MANAGE_ROLES) ? <ManageRoles permissions={permissions} /> : <NotAuthorized />} />
@@ -277,7 +273,7 @@ export default function Dashboard() {
               hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) || hasPermission(permissions, PERMISSIONS.VIEW_CLASSES) ? (
                 <>
                   {hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) && (
-                    <ManageClasses permissions={permissions} />
+                    <ManageClasses />
                   )}
                   {hasPermission(permissions, PERMISSIONS.VIEW_CLASSES) && (
                     <ViewClasses employeeId={employeeId} />
@@ -287,14 +283,14 @@ export default function Dashboard() {
             } />
             <Route path="grade" element={
               hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) || hasPermission(permissions, PERMISSIONS.ENCODE_GRADES)
-                ? <ManageGrades permissions={permissions} />
+                ? <ManageGrades />
                 : <NotAuthorized />
             } />
             <Route path="settings" element={requirePermission(PERMISSIONS.MANAGE_SETTINGS) ? <GenericSection title="Manage Settings" /> : <NotAuthorized />} />
             <Route path="portal_settings" element={requirePermission(PERMISSIONS.PORTAL_SETTINGS) ? <PortalSettings /> : <NotAuthorized />} />
             <Route path="subjects" element={
               hasPermission(permissions, PERMISSIONS.MANAGE_SUBJECTS) || hasPermission(permissions, PERMISSIONS.VIEW_SUBJECTS)
-                ? <ManageSubjects permissions={permissions} />
+                ? <ManageSubjects />
                 : <NotAuthorized />
             } />
             <Route path="*" element={<GenericSection title="Not Found" />} />
@@ -304,18 +300,6 @@ export default function Dashboard() {
 
       <LockedModal open={showLockedModal} onClose={() => setShowLockedModal(false)} />
     </div>
-  );
-}
-
-// Section Component
-function Section({ title, children }) {
-  return (
-    <section className="bg-white p-6 rounded-lg shadow-md border border-gray-300 mb-8">
-      <h2 className="text-xl font-bold text-black mb-4">{title}</h2>
-      <div>
-        {children}
-      </div>
-    </section>
   );
 }
 
@@ -330,7 +314,6 @@ function GenericSection({ title }) {
   );
 }
 
-// Not Authorized Component
 function NotAuthorized() {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md border border-red-300">

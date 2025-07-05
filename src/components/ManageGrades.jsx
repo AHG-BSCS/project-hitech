@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import {
+  collection,
+  onSnapshot,
+  query,
+  where
+} from 'firebase/firestore';
 import { db } from '../firebase';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
 import EncodeGrades from '../modals/EncodeGrades';
+import { usePermissions } from '../context/PermissionsContext';
 
-export default function ManageGrades({ permissions }) {
+export default function ManageGrades() {
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [students, setStudents] = useState([]);
@@ -13,35 +19,52 @@ export default function ManageGrades({ permissions }) {
   const [searchClass, setSearchClass] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
   const [activeGradeModal, setActiveGradeModal] = useState(null);
+  const { permissions } = usePermissions();
 
   const canManage = hasPermission(permissions, PERMISSIONS.MANAGE_GRADES);
   const canView = hasPermission(permissions, PERMISSIONS.ENCODE_GRADES);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const [classSnap, subjectSnap, studentSnap, userSnap, subjectAssignSnap] = await Promise.all([
-        getDocs(collection(db, 'classes')),
-        getDocs(collection(db, 'subjects')),
-        getDocs(collection(db, 'students')),
-        getDocs(collection(db, 'users')),
-        getDocs(collection(db, 'subjectAssignments')),
-      ]);
-      setClasses(classSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setSubjects(subjectSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setStudents(studentSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setUsers(userSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setSubjectAssignments(subjectAssignSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    };
-    fetchData();
-  }, []);
+  const employeeId = localStorage.getItem('employeeId') || '';
 
+  // Real-time listeners
   useEffect(() => {
-    const employeeId = localStorage.getItem('employeeId') || '';
-    const assignment = subjectAssignments.find(sa => sa.teacherEmployeeId === employeeId);
-    if (assignment) {
-      setCurrentUserId(assignment.teacherId || '');
-    }
-  }, [subjectAssignments]);
+    if (!employeeId) return;
+
+    const unsubAssignments = onSnapshot(
+      query(collection(db, 'subjectAssignments'), where('teacherEmployeeId', '==', employeeId)),
+      (snap) => {
+        const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setSubjectAssignments(data);
+
+        const matched = data.find(sa => sa.teacherEmployeeId === employeeId);
+        if (matched) setCurrentUserId(matched.teacherId || '');
+      }
+    );
+
+    const unsubClasses = onSnapshot(collection(db, 'classes'), (snap) => {
+      setClasses(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    const unsubSubjects = onSnapshot(collection(db, 'subjects'), (snap) => {
+      setSubjects(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    const unsubStudents = onSnapshot(collection(db, 'students'), (snap) => {
+      setStudents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
+      setUsers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return () => {
+      unsubAssignments();
+      unsubClasses();
+      unsubSubjects();
+      unsubStudents();
+      unsubUsers();
+    };
+  }, [employeeId]);
 
   const filteredSubjectAssignments = subjectAssignments.filter(sa => sa.teacherId === currentUserId);
   const classesWithSubjects = classes.filter(cls =>
@@ -133,7 +156,6 @@ export default function ManageGrades({ permissions }) {
           sectionName={activeGradeModal.sectionName}
           subjectName={activeGradeModal.subjectName}
           students={students}
-          permissions={permissions}
         />
       )}
     </div>
