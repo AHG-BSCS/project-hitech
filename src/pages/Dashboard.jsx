@@ -32,7 +32,7 @@ export default function Dashboard() {
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
       if (!user) {
-        navigate('/login');
+        navigate('/');
         return;
       }
   
@@ -71,7 +71,7 @@ export default function Dashboard() {
     localStorage.removeItem('employeeId');
     localStorage.removeItem('userId');
     localStorage.removeItem('isAuthenticated');
-    window.location.href = '/login';
+    window.location.href = '/';
   };
 
   const handleSelectChange = (e) => {
