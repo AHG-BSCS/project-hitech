@@ -108,7 +108,7 @@ export default function EncodeGrades({ isOpen, onClose, classId, subjectId, sect
     }
   
     await Promise.all(batch);
-    setModal({ open: true, type: 'success', message: 'Grades saved successfully.' });
+    setModal({ open: true, type: 'success', message: 'Success' });
   };  
 
   const handleSaveGrades = async () => {
@@ -212,25 +212,49 @@ export default function EncodeGrades({ isOpen, onClose, classId, subjectId, sect
                     <td className='text-black'>{displayName}</td>
                     {['q1', 'q2', 'q3', 'q4'].map(q => (
                       <td key={q}>
-                        <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            className="input input-bordered w-20 bg-white text-black border-gray-300"
-                            value={entry[q]?.grade || ''}
-                            onChange={(e) => handleGradeChange(stu.id, q, e.target.value)}
-                            disabled={entry[q]?.finalized && !canManage}
-                            />
-                        <div className="text-xs mt-1">
-                          <label className='text-gray-800'>
+                        {entry[q]?.finalized && !canManage ? (
+                          <span className="text-black">{entry[q]?.grade || '—'}</span>
+                        ) : (
                           <input
-                            type="checkbox"
-                            checked={entry[q]?.finalized || false}
-                            onChange={() => handleToggleFinalized(stu.id, q)}
-                            disabled={initialFinalized[stu.id]?.[q]}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="\d*"
+                            className="input input-bordered w-20 bg-white text-black border-gray-300"
+                            value={entry[q]?.grade === 0 ? '0' : entry[q]?.grade || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (!/^\d*$/.test(value)) return;
+                              if (value === '') {
+                                handleGradeChange(stu.id, q, '');
+                                return;
+                              }
+                              const num = parseInt(value, 10);
+                              if (num >= 0 && num <= 100) {
+                                handleGradeChange(stu.id, q, num);
+                              }
+                            }}
+                            onPaste={(e) => {
+                              const paste = e.clipboardData.getData('text');
+                              if (!/^\d+$/.test(paste) || +paste > 100) {
+                                e.preventDefault();
+                              }
+                            }}
                           />
-                            Finalized
-                          </label>
+                        )}
+                        <div className="text-xs mt-1">
+                        {initialFinalized[stu.id]?.[q] && !canManage ? (
+                            <span className="text-green-600 font-semibold">✓ Finalized</span>
+                          ) : (
+                            <label className='text-gray-800'>
+                            <input
+                              type="checkbox"
+                              checked={entry[q]?.finalized || false}
+                              onChange={() => handleToggleFinalized(stu.id, q)}
+                              disabled={initialFinalized[stu.id]?.[q] && !canManage}
+                            />
+                              Finalized
+                            </label>
+                          )}
                         </div>
                       </td>
                     ))}
