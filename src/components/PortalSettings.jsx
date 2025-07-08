@@ -79,6 +79,7 @@ const PortalSettings = () => {
   // Account Defaults
   const [userDefaultPassword, setUserDefaultPassword] = useState('');
   const [userDefaultPasswordPlain, setUserDefaultPasswordPlain] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const fetchSettings = async () => {
     const docRef = doc(db, 'system', 'settings');
@@ -158,6 +159,25 @@ const PortalSettings = () => {
     }
   };  
 
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    
+    if (value.startsWith(' ')) {
+        return;
+    }
+
+    setUserDefaultPasswordPlain(value);
+  
+    const trimmed = value.trim();
+    if (trimmed === '') {
+        setPasswordError('');
+    } else if (trimmed && trimmed.length < 6) {
+        setPasswordError('Password must be at least 6 characters.');
+    } else {
+        setPasswordError('');
+    }
+  };
+
   const handleSave = async () => {
     setLoading(true);
     setError('');
@@ -211,29 +231,54 @@ const PortalSettings = () => {
     });
     // Save other settings in system/settings (without bgType/bgValue/bgBase64)
     let passwordToSave = userDefaultPassword;
-    let passwordPlainToSave = userDefaultPasswordPlain;
-    if (userDefaultPasswordPlain) {
-      // If user entered a new password, hash it
-      passwordToSave = await bcrypt.hash(userDefaultPasswordPlain, 10);
-      passwordPlainToSave = userDefaultPasswordPlain;
+    let passwordPlainToSave = userDefaultPasswordPlain.trim();
+    if (passwordPlainToSave) {
+      if (passwordPlainToSave.length < 6) {
+        setError('Default password must be at least 6 characters.');
+        setTimeout(() => setError(''), 2000);
+        setLoading(false);
+        return;
+      }
+      const salt = await bcrypt.genSalt(10);
+      passwordToSave = await bcrypt.hash(passwordPlainToSave, salt);
+      passwordPlainToSave = passwordPlainToSave;
     }
-    await setDoc(doc(db, 'system', 'settings'), {
-      titleBar,
-      colorPalette,
-      schoolId,
-      logoBase64,
-      logoSvg,
-      logoMode,
-      division,
-      region,
-      schoolName,
-      schoolAddress,
-      contactNumber,
-      principalName,
-      district,
-      userDefaultPassword: passwordToSave,
-      userDefaultPasswordPlaintext: passwordPlainToSave,
-    }, { merge: true });
+    if (userDefaultPasswordPlain.trim() === '') {
+      await setDoc(doc(db, 'system', 'settings'), {
+        titleBar,
+        colorPalette,
+        schoolId,
+        logoBase64,
+        logoSvg,
+        logoMode,
+        division,
+        region,
+        schoolName,
+        schoolAddress,
+        contactNumber,
+        principalName,
+        district,
+      }, { merge: true });
+    }
+    else {
+      await setDoc(doc(db, 'system', 'settings'), {
+        titleBar,
+        colorPalette,
+        schoolId,
+        logoBase64,
+        logoSvg,
+        logoMode,
+        division,
+        region,
+        schoolName,
+        schoolAddress,
+        contactNumber,
+        principalName,
+        district,
+        userDefaultPassword: passwordToSave,
+        userDefaultPasswordPlaintext: passwordPlainToSave,
+      }, { merge: true });
+    }
     setLoading(false);
     setSuccess(true);
     setLogoChanged(false);
@@ -364,13 +409,17 @@ const PortalSettings = () => {
         <form className="space-y-6 text-black" onSubmit={e => e.preventDefault()}>
           <div>
             <label className="block font-medium mb-1">User Default Password</label>
+           
             <input
               type="text"
               className="w-full border bg-white rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               placeholder="Enter default password for new users"
-              value={userDefaultPasswordPlain || ''}
-              onChange={e => setUserDefaultPasswordPlain(e.target.value)}
+              value={userDefaultPasswordPlain}
+              onChange={handlePasswordChange}
             />
+            {passwordError && (
+              <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+            )}
             <p className="text-xs text-gray-500 mt-1">This password will be assigned to new users in Manage Users. (Current hash: {userDefaultPassword ? 'Set' : 'Not set'})</p>
           </div>
         </form>
