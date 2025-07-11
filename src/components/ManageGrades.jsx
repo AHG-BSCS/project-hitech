@@ -26,53 +26,67 @@ export default function ManageGrades() {
 
   const employeeId = localStorage.getItem('employeeId') || '';
 
-  // Real-time listeners
   useEffect(() => {
     if (!employeeId) return;
-
-    const unsubAssignments = onSnapshot(
-      query(collection(db, 'subjectAssignments'), where('teacherEmployeeId', '==', employeeId)),
-      (snap) => {
-        const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setSubjectAssignments(data);
-
-        const matched = data.find(sa => sa.teacherEmployeeId === employeeId);
-        if (matched) setCurrentUserId(matched.teacherId || '');
-      }
-    );
-
+  
+    let unsubAssignments;
+  
+    if (canManage) {
+      unsubAssignments = onSnapshot(
+        collection(db, 'subjectAssignments'),
+        (snap) => {
+          const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setSubjectAssignments(data);
+        }
+      );
+    } else if (canView) {
+      unsubAssignments = onSnapshot(
+        query(collection(db, 'subjectAssignments'), where('teacherEmployeeId', '==', employeeId)),
+        (snap) => {
+          const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setSubjectAssignments(data);
+  
+          const matched = data.find(sa => sa.teacherEmployeeId === employeeId);
+          if (matched) setCurrentUserId(matched.teacherId || '');
+        }
+      );
+    }
+  
     const unsubClasses = onSnapshot(collection(db, 'classes'), (snap) => {
       setClasses(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
-
+  
     const unsubSubjects = onSnapshot(collection(db, 'subjects'), (snap) => {
       setSubjects(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
-
+  
     const unsubStudents = onSnapshot(collection(db, 'students'), (snap) => {
       setStudents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
-
+  
     const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
       setUsers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
-
+  
     return () => {
-      unsubAssignments();
+      unsubAssignments?.();
       unsubClasses();
       unsubSubjects();
       unsubStudents();
       unsubUsers();
     };
-  }, [employeeId]);
+  }, [employeeId, canManage, canView]);  
 
-  const filteredSubjectAssignments = subjectAssignments.filter(sa => sa.teacherId === currentUserId);
+  const filteredSubjectAssignments = canManage
+    ? subjectAssignments
+    : subjectAssignments.filter(sa => sa.teacherId === currentUserId);
+
   const classesWithSubjects = classes.filter(cls =>
     filteredSubjectAssignments.some(sa => sa.classId === cls.id)
-  );
+  );    
 
   const getSubjectAssignmentsForClass = (classId) =>
-    filteredSubjectAssignments.filter(sa => sa.classId === classId);
+    filteredSubjectAssignments.filter(sa => sa.classId === classId);  
 
   const getTeacherName = (teacherId) =>
     users.find(u => u.id === teacherId)?.name || '-';
