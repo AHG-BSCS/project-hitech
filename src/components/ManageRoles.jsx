@@ -93,7 +93,9 @@ export default function ManageRoles() {
     <div>
       <Section title="Manage Roles">
         <div>
-          <button onClick={() => { setShowRegisterRoleModal(true); setEditRole(null); }} className="btn bg-blue-600 text-white">
+          <button onClick={() => { setShowRegisterRoleModal(true); setEditRole(null); }}
+            className="btn bg-blue-600 text-white w-[150px] text-center"
+          >
             Add Role
           </button>
         </div>

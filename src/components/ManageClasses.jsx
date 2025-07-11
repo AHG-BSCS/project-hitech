@@ -183,7 +183,7 @@ export default function ManageClasses() {
       <Section title="Manage Classes">
         {!isViewOnly && (
           <button
-            className="btn bg-blue-600 text-white"
+            className="btn bg-blue-600 text-white w-[150px] text-center"
             onClick={() => {
               setEditData(null);
               setShowModal(true);

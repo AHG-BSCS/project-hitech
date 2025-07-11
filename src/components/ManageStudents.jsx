@@ -94,7 +94,7 @@ export default function ManageStudents() {
         {!isViewOnly && (
           <button
             onClick={() => setShowRegisterStudentModal(true)}
-            className="btn bg-blue-600 text-white"
+            className="btn bg-blue-600 text-white w-[150px] text-center"
           >
             Add Student
           </button>

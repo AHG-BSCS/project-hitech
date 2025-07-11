@@ -136,7 +136,7 @@ export default function ManageSubjects() {
       <Section title="Manage Subjects">
         {!isViewOnly && (
           <button
-            className="btn bg-blue-600 text-white"
+            className="btn bg-blue-600 text-white w-[150px] text-center"
             onClick={() => {
               setEditData(null);
               setSubjectName('');

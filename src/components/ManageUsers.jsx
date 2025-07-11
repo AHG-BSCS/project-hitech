@@ -138,7 +138,7 @@ export default function ManageUsers() {
         {hasPermission(permissions, PERMISSIONS.MANAGE_USERS) && (
           <button
             onClick={() => { setShowRegisterUserModal(true); setEditUser(null); }}
-            className="btn bg-blue-600 text-white"
+            className="btn bg-blue-600 text-white w-[150px] text-center"
           >
             Add Account
           </button>
