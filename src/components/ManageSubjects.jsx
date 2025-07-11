@@ -162,8 +162,8 @@ export default function ManageSubjects() {
             <table className="table w-full text-sm text-left text-gray-700">
               <thead className="bg-gray-100 text-black sticky top-0 z-10">
                 <tr>
-                  <th>Subject Name</th>
-                  <th>Actions</th>
+                  <th className="w-[1000px] px-4 py-2">Subject Name</th>
+                  <th className="w-[100px] px-4 py-2 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -176,8 +176,8 @@ export default function ManageSubjects() {
                   .map(subj => {
                     return (
                       <tr key={subj.id} className={`${actionSubjectId === subj.id ? 'bg-blue-200 text-black' : 'hover:bg-blue-100 hover:text-black'}`}>
-                        <td>{subj.name}</td>
-                        <td className="relative">
+                        <td className="w-[1000px] px-4 py-2">{subj.name}</td>
+                        <td className="relative w-[100px] px-4 py-2 text-center">
                           <button
                             ref={el => (buttonRefs.current[subj.id] = el)}
                             onClick={() => toggleDropdown(subj.id)}
