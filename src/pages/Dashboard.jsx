@@ -243,20 +243,6 @@ export default function Dashboard() {
               </button>
             <h1 className="text-2xl font-bold text-black">{settings?.titleBar || 'Welcome to System'}</h1>
           </div>
-          <div className="flex items-center">
-            <span className="text-black text-sm mr-2 hidden sm:inline">{employeeId || 'User'}</span>
-            <select
-              value={selectValue}
-              onChange={handleSelectChange}
-              className="select select-sm bg-white border border-gray-300 text-black"
-            >
-              <option value="" disabled>—</option>
-              <option value="account">Account Info</option>
-              <option value="records">Records</option>
-              <option value="misc">Something Something</option>
-              <option value="logout">Logout</option>
-            </select>
-          </div>
         </header>
 
         {/* Section Content */}
