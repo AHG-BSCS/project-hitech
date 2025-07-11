@@ -127,20 +127,20 @@ export default function ManageUsers() {
   if (!hasPermission(permissions, PERMISSIONS.MANAGE_USERS)) {
     return (
       <Section title="Access Denied">
-        <p className="text-red-500">You do not have permission to manage users.</p>
+        <p className="text-red-500">You do not have permission to manage accounts.</p>
       </Section>
     );
   }
 
   return (
     <div>
-      <Section title="Manage Users">
+      <Section title="Manage Accounts">
         {hasPermission(permissions, PERMISSIONS.MANAGE_USERS) && (
           <button
             onClick={() => { setShowRegisterUserModal(true); setEditUser(null); }}
             className="btn bg-blue-600 text-white"
           >
-            Add User
+            Add Account
           </button>
         )}
       </Section>

@@ -13,6 +13,7 @@ const PERMISSIONS = {
     ENCODE_GRADES: 1 << 10,    // 1024
     VIEW_USERS: 1 << 11,       // 2048
     VIEW_SUBJECTS: 1 << 12,    // 4096
+    VIEW_REPORTS: 1 << 13,     // 8192
   };
   
   // Calculate the value for all permissions combined (now includes view permissions)

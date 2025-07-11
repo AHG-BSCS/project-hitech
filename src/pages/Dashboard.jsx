@@ -15,7 +15,9 @@ import ManageGrades from '../components/ManageGrades';
 import ViewClasses from '../components/ViewClasses';
 import { useSystemSettings } from '../context/SystemSettingsContext';
 import { usePermissions } from '../context/PermissionsContext';
-import { FaHome, FaUserGraduate, FaChalkboardTeacher, FaUsers, FaUserShield, FaCogs, FaCog, FaSchool } from 'react-icons/fa';
+import { FaHome, FaUserGraduate, FaChalkboardTeacher, FaUsers, FaUserShield, FaCogs, FaCog, FaSchool, FaFolderOpen } from 'react-icons/fa';
+import { BsClipboard2DataFill } from 'react-icons/bs';
+import {  PiCertificateFill } from 'react-icons/pi';
 
 // The main Dashboard component
 export default function Dashboard() {
@@ -88,15 +90,17 @@ export default function Dashboard() {
     ['home', 'Home'],
     // Show if MANAGE or VIEW permission is present
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS) || hasPermission(permissions, PERMISSIONS.VIEW_STUDENTS)
-      ? [['student_info', 'Student Information']] : []),
-    ...(hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) || hasPermission(permissions, PERMISSIONS.ENCODE_GRADES)
-      ? [['grade', 'Grade']] : []),
+      ? [['students', 'Students']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_CLASSES) || hasPermission(permissions, PERMISSIONS.VIEW_CLASSES)
       ? [['classes', 'Classes']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) || hasPermission(permissions, PERMISSIONS.ENCODE_GRADES)
+      ? [['grades', 'Grades']] : []),
+    ...(hasPermission(permissions, PERMISSIONS.VIEW_REPORTS)
+      ? [['reports', 'Reports']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_SUBJECTS) || hasPermission(permissions, PERMISSIONS.VIEW_SUBJECTS)
       ? [['subjects', 'Subjects']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_USERS) || hasPermission(permissions, PERMISSIONS.VIEW_USERS)
-      ? [['users', 'Users']] : []),
+      ? [['accounts', 'Accounts']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_ROLES)
       ? [['roles', 'Roles']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)
@@ -108,14 +112,15 @@ export default function Dashboard() {
   // Map menu keys to icons
   const menuIcons = {
     home: <FaHome className="w-7 h-7 mr-2" />,
-    student_info: <FaUserGraduate className="w-7 h-7 mr-2" />,
-    grade: <FaChalkboardTeacher className="w-7 h-7 mr-2" />,
+    students: <FaUserGraduate className="w-7 h-7 mr-2" />,
+    grades: <PiCertificateFill className="w-7 h-7 mr-2" />,
     classes: <FaChalkboardTeacher className="w-7 h-7 mr-2" />,
-    subjects: <FaChalkboardTeacher className="w-7 h-7 mr-2" />,
-    users: <FaUsers className="w-7 h-7 mr-2" />,
+    subjects: <FaFolderOpen className="w-7 h-7 mr-2" />,
+    accounts: <FaUsers className="w-7 h-7 mr-2" />,
     roles: <FaUserShield className="w-7 h-7 mr-2" />,
     settings: <FaCogs className="w-7 h-7 mr-2" />,
     portal_settings: <FaSchool className="w-7 h-7 mr-2" />,
+    reports: <BsClipboard2DataFill className="w-7 h-7 mr-2" />,
   };
 
   if (loading) {
@@ -258,12 +263,12 @@ export default function Dashboard() {
         <main className="p-5 flex-1 overflow-y-auto">
           <Routes>
             <Route path="home" element={<Home />} />
-            <Route path="student_info" element={
+            <Route path="students" element={
               hasPermission(permissions, PERMISSIONS.MANAGE_STUDENTS) || hasPermission(permissions, PERMISSIONS.VIEW_STUDENTS)
                 ? <ManageStudents />
                 : <NotAuthorized />
             } />
-            <Route path="users" element={
+            <Route path="accounts" element={
               hasPermission(permissions, PERMISSIONS.MANAGE_USERS) || hasPermission(permissions, PERMISSIONS.VIEW_USERS)
                 ? <ManageUsers />
                 : <NotAuthorized />
@@ -281,7 +286,7 @@ export default function Dashboard() {
                 </>
               ) : <NotAuthorized />
             } />
-            <Route path="grade" element={
+            <Route path="grades" element={
               hasPermission(permissions, PERMISSIONS.MANAGE_GRADES) || hasPermission(permissions, PERMISSIONS.ENCODE_GRADES)
                 ? <ManageGrades />
                 : <NotAuthorized />
@@ -293,6 +298,7 @@ export default function Dashboard() {
                 ? <ManageSubjects />
                 : <NotAuthorized />
             } />
+            <Route path="reports" element={requirePermission(PERMISSIONS.VIEW_REPORTS) ? <GenericSection title="Reports" /> : <NotAuthorized />} />
             <Route path="*" element={<GenericSection title="Not Found" />} />
           </Routes>
         </main>

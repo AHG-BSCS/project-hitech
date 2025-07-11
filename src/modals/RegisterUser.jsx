@@ -202,7 +202,7 @@ export default function RegisterUser({ open, onClose, editUser }) {
     <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
       {/* Prevent outside click from closing the modal */}
       <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold text-black mb-4 text-center">{editUser ? 'Edit User' : 'Add New User'}</h2>
+        <h2 className="text-lg font-bold text-black mb-4 text-center">{editUser ? 'Edit Account' : 'Add New Account'}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-800 mb-1">Full Name</label>
