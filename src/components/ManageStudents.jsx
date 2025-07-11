@@ -115,11 +115,11 @@ export default function ManageStudents() {
             <table className="table w-full text-sm text-left text-gray-700">
             <thead className="bg-gray-100 text-black sticky top-0 z-10">
                 <tr>
-                    <th className="w-32">LRN</th>
-                    <th className="w-32">First Name</th>
-                    <th className="w-32">Last Name</th>
-                    <th className="w-24">Sex</th>
-                    <th className="w-32">Actions</th>
+                    <th className="w-[175px] px-4 py-2">LRN</th>
+                    <th className="w-[200px] px-4 py-2">Last Name</th>
+                    <th className="w-[200px] px-4 py-2">First Name</th>
+                    <th className="w-[100px] px-4 py-2">Sex</th>
+                    <th className="w-[100px] px-4 py-2 text-center">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -141,11 +141,11 @@ export default function ManageStudents() {
                             : 'hover:bg-blue-100 hover:text-black'
                         }`}
                     >
-                        <td>{student.learningReferenceNumber}</td>
-                        <td>{student.firstName}</td>
-                        <td>{student.lastName}</td>
-                        <td>{student.sex}</td>
-                        <td className="relative">
+                        <td className="w-[175px] px-4 py-2">{student.learningReferenceNumber}</td>
+                        <td className="w-[200px] px-4 py-2">{student.lastName}</td>
+                        <td className="w-[200px] px-4 py-2">{student.firstName}</td>
+                        <td className="w-[100px] px-4 py-2">{student.sex}</td>
+                        <td className="relative w-[100px] px-4 py-2 text-center">
                         <button
                             ref={el => (buttonRefs.current[student.id] = el)}
                             onClick={() => toggleDropdown(student.id)}

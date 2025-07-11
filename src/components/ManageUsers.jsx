@@ -158,11 +158,12 @@ export default function ManageUsers() {
             <table className="table w-full text-sm text-left text-gray-700">
               <thead className="bg-gray-100 text-black sticky top-0 z-10">
                 <tr>
-                  <th>Employee ID</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Actions</th>
+                  <th className="w-[175px] px-4 py-2">Employee ID</th>
+                  <th className="w-[200px] px-4 py-2">Name</th>
+                  <th className="w-[200px] px-4 py-2">Email</th>
+                  <th className="w-[150px] px-4 py-2">Role</th>
+                  <th className="w-[100px] px-4 py-2 text-center">Status</th>
+                  <th className="w-[100px] px-4 py-2 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -180,22 +181,22 @@ export default function ManageUsers() {
                           : 'hover:bg-blue-100 hover:text-black'
                       }`}
                     >
-                      <td>{user.employeeId}</td>
-                      <td>{user.name}</td>
-                      <td>{user.email}</td>
-                      <td>
-                        {user.role}
+                      <td className="w-[175px] px-4 py-2">{user.employeeId}</td>
+                      <td className="w-[200px] px-4 py-2">{user.name}</td>
+                      <td className="w-[200px] px-4 py-2">{user.email}</td>
+                      <td className="w-[150px] px-4 py-2">{user.role}</td>
+                      <td className="w-[100px] px-4 py-2 text-center">
                         {user.active === false && (
-                          <span className="ml-2 px-2 py-0.5 rounded bg-gray-400 text-white text-xs">Inactive</span>
+                          <span className="px-2 py-0.5 rounded bg-gray-400 text-white text-xs">Inactive</span>
                         )}
                         {user.active !== false && !user.isLocked && (
-                          <span className="ml-2 px-2 py-0.5 rounded bg-green-500 text-white text-xs">Active</span>
+                          <span className="px-2 py-0.5 rounded bg-green-500 text-white text-xs">Active</span>
                         )}
                         {user.isLocked && (
-                          <span className="ml-2 px-2 py-0.5 rounded bg-yellow-500 text-white text-xs">Locked</span>
+                          <span className="px-2 py-0.5 rounded bg-yellow-500 text-white text-xs">Locked</span>
                         )}
                       </td>
-                      <td className="relative">
+                      <td className="relative w-[100px] px-4 py-2 text-center">
                         {hasPermission(permissions, PERMISSIONS.MANAGE_USERS) && (
                           <>
                             <button
@@ -350,8 +351,8 @@ function LockUserModal({ open, onClose, onConfirm, user }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
       <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-        <h2 className="text-lg font-bold mb-4">Lock User</h2>
-        <p className="mb-4">Are you sure you want to <span className="font-semibold">lock</span> the account for <span className="font-semibold">{user?.email}</span>?</p>
+        <h2 className="text-lg font-bold mb-4 text-black">Lock User</h2>
+        <p className="mb-4 text-black">Are you sure you want to <span className="font-semibold">lock</span> the account for <span className="font-semibold">{user?.email}</span>?</p>
         <div className="flex justify-end space-x-2">
           <button type="button" className="btn" onClick={onClose}>Cancel</button>
           <button type="button" className="btn bg-yellow-600 text-white" onClick={onConfirm}>Lock User</button>
@@ -366,8 +367,8 @@ function UnlockUserModal({ open, onClose, onConfirm, user }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
       <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-        <h2 className="text-lg font-bold mb-4">Unlock User</h2>
-        <p className="mb-4">Are you sure you want to <span className="font-semibold">unlock</span> the account for <span className="font-semibold">{user?.email}</span>?</p>
+        <h2 className="text-lg font-bold mb-4 text-black">Unlock User</h2>
+        <p className="mb-4 text-black">Are you sure you want to <span className="font-semibold">unlock</span> the account for <span className="font-semibold">{user?.email}</span>?</p>
         <div className="flex justify-end space-x-2">
           <button type="button" className="btn" onClick={onClose}>Cancel</button>
           <button type="button" className="btn bg-green-600 text-white" onClick={onConfirm}>Unlock User</button>
@@ -382,8 +383,8 @@ function SuccessModal({ open, onClose, message }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
       <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-        <h2 className="text-lg font-bold mb-4">Success</h2>
-        <p className="mb-4">{message}</p>
+        <h2 className="text-lg text-black font-bold mb-4">Success</h2>
+        <p className="mb-4 text-black">{message}</p>
         <div className="flex justify-end">
           <button type="button" className="btn bg-blue-600 text-white" onClick={onClose}>OK</button>
         </div>
