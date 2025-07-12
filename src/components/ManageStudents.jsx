@@ -105,7 +105,7 @@ export default function ManageStudents() {
         <div className="w-full flex flex-col space-y-4">
           <input
             type="text"
-            placeholder="Search by Student Name"
+            placeholder="Search by LRN or Student Name"
             className="input input-bordered w-full bg-white border border-gray-300 text-black"
             value={searchTerm.toUpperCase()}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -132,6 +132,7 @@ export default function ManageStudents() {
                         student.learningReferenceNumber?.includes(term)
                     );
                     })
+                    .sort((a, b) => a.lastName?.localeCompare(b.lastName))
                     .map((student) => (
                     <tr
                         key={student.id}

@@ -19,12 +19,12 @@ export default function RegisterStudent({ open, onClose, studentToEdit, viewOnly
   useEffect(() => {
     if (studentToEdit) {
       setLRN(studentToEdit.learningReferenceNumber || '');
-      setFirstName(studentToEdit.firstName || '');
-      setMiddleName(studentToEdit.middleName || '');
-      setLastName(studentToEdit.lastName || '');
-      setNameExtension(studentToEdit.nameExtension || '');
+      setFirstName((studentToEdit.firstName || '').toUpperCase());
+      setMiddleName((studentToEdit.middleName || '').toUpperCase());
+      setLastName((studentToEdit.lastName || '').toUpperCase());
+      setNameExtension((studentToEdit.nameExtension || '').toUpperCase());
       setBirthdate(studentToEdit.birthdate || '');
-      setSex(studentToEdit.sex || '');
+      setSex((studentToEdit.sex || '').toUpperCase());
     } else {
       setLRN('');
       setFirstName('');
@@ -48,6 +48,12 @@ export default function RegisterStudent({ open, onClose, studentToEdit, viewOnly
     }
 
     setLoading(true);
+    setLRN(learningReferenceNumber.trim());
+    setFirstName(firstName.trim().toUpperCase());
+    setMiddleName(middleName.trim().toUpperCase());
+    setLastName(lastName.trim().toUpperCase());
+    setNameExtension(nameExtension.trim().toUpperCase());
+    setSex(sex.trim().toUpperCase());
 
     try {
       const studentData = {
@@ -148,7 +154,10 @@ export default function RegisterStudent({ open, onClose, studentToEdit, viewOnly
                 type="text"
                 className={`input input-bordered w-full bg-white border border-gray-300 text-black ${viewOnly ? 'cursor-default' : ''}`}
                 value={lastName}
-                onChange={(e) => (setLastName(e.target.value), setMessage(''))}
+                onChange={(e) => {
+                  setLastName(e.target.value.toUpperCase());
+                  setMessage('');
+                }}
                 placeholder='E.g. Dela Cruz'
                 required
                 readOnly={viewOnly}
@@ -160,7 +169,10 @@ export default function RegisterStudent({ open, onClose, studentToEdit, viewOnly
                 type="text"
                 className={`input input-bordered w-full bg-white border border-gray-300 text-black ${viewOnly ? 'cursor-default' : ''}`}
                 value={firstName}
-                onChange={(e) => (setFirstName(e.target.value), setMessage(''))}
+                onChange={(e) => {
+                  setFirstName(e.target.value.toUpperCase());
+                  setMessage('');
+                }}
                 placeholder='E.g. Juan'
                 required
                 readOnly={viewOnly}
@@ -172,7 +184,10 @@ export default function RegisterStudent({ open, onClose, studentToEdit, viewOnly
                 type="text"
                 className={`input input-bordered w-full bg-white border border-gray-300 text-black ${viewOnly ? 'cursor-default' : ''}`}
                 value={middleName}
-                onChange={(e) => (setMiddleName(e.target.value), setMessage(''))}
+                onChange={(e) => {
+                  setMiddleName(e.target.value.toUpperCase());
+                  setMessage('');
+                }}
                 placeholder='E.g. Reyes'
                 readOnly={viewOnly}
               />
@@ -183,7 +198,10 @@ export default function RegisterStudent({ open, onClose, studentToEdit, viewOnly
                 type="text"
                 className={`input input-bordered w-full bg-white border border-gray-300 text-black ${viewOnly ? 'cursor-default' : ''}`}
                 value={nameExtension}
-                onChange={(e) => (setNameExtension(e.target.value), setMessage(''))}
+                onChange={(e) => {
+                  setNameExtension(e.target.value.toUpperCase());
+                  setMessage('');
+                }}
                 placeholder='E.g. Jr, II, III'
                 readOnly={viewOnly}
               />
@@ -211,8 +229,8 @@ export default function RegisterStudent({ open, onClose, studentToEdit, viewOnly
                     type="radio"
                     className="form-radio text-blue-600 bg-white"
                     name="sex"
-                    value="Male"
-                    checked={sex === 'Male'}
+                    value="MALE"
+                    checked={sex === 'MALE'}
                     onChange={(e) => (setSex(e.target.value), setMessage(''))}
                     disabled={viewOnly}
                   />
@@ -223,8 +241,8 @@ export default function RegisterStudent({ open, onClose, studentToEdit, viewOnly
                     type="radio"
                     className="form-radio text-blue-600 bg-white"
                     name="sex"
-                    value="Female"
-                    checked={sex === 'Female'}
+                    value="FEMALE"
+                    checked={sex === 'FEMALE'}
                     onChange={(e) => (setSex(e.target.value), setMessage(''))}
                     disabled={viewOnly}
                   />
