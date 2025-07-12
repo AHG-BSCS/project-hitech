@@ -4,6 +4,7 @@ import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import PERMISSIONS, { hasPermission } from '../modules/Permissions';
+import { usePermissions } from '../context/PermissionsContext';
 import ManageClasses from '../components/ManageClasses';
 import ManageRoles from '../components/ManageRoles';
 import ManageUsers from '../components/ManageUsers';
@@ -14,8 +15,8 @@ import ManageSubjects from '../components/ManageSubjects';
 import ManageGrades from '../components/ManageGrades';
 import ViewClasses from '../components/ViewClasses';
 import { useSystemSettings } from '../context/SystemSettingsContext';
-import { usePermissions } from '../context/PermissionsContext';
-import { FaHome, FaUserGraduate, FaChalkboardTeacher, FaUsers, FaUserShield, FaCogs, FaCog, FaSchool, FaFolderOpen } from 'react-icons/fa';
+import UserSettings from '../components/UserSettings';
+import { FaHome, FaUserGraduate, FaChalkboardTeacher, FaUsers, FaUserShield, FaCogs, FaCog, FaSchool, FaFolderOpen, FaUser } from 'react-icons/fa';
 import { BsClipboard2DataFill } from 'react-icons/bs';
 import {  PiCertificateFill } from 'react-icons/pi';
 
@@ -103,8 +104,7 @@ export default function Dashboard() {
       ? [['accounts', 'Accounts']] : []),
     ...(hasPermission(permissions, PERMISSIONS.MANAGE_ROLES)
       ? [['roles', 'Roles']] : []),
-    ...(hasPermission(permissions, PERMISSIONS.MANAGE_SETTINGS)
-      ? [['settings', 'Settings']] : []),
+    ['settings', 'Settings'], // Available to all users (User Settings)
     ...(hasPermission(permissions, PERMISSIONS.PORTAL_SETTINGS)
       ? [['portal_settings', 'Portal Settings']] : []),
   ];
@@ -118,7 +118,7 @@ export default function Dashboard() {
     subjects: <FaFolderOpen className="w-7 h-7 mr-2" />,
     accounts: <FaUsers className="w-7 h-7 mr-2" />,
     roles: <FaUserShield className="w-7 h-7 mr-2" />,
-    settings: <FaCogs className="w-7 h-7 mr-2" />,
+    settings: <FaUser className="w-7 h-7 mr-2" />,
     portal_settings: <FaSchool className="w-7 h-7 mr-2" />,
     reports: <BsClipboard2DataFill className="w-7 h-7 mr-2" />,
   };
@@ -277,7 +277,7 @@ export default function Dashboard() {
                 ? <ManageGrades />
                 : <NotAuthorized />
             } />
-            <Route path="settings" element={requirePermission(PERMISSIONS.MANAGE_SETTINGS) ? <GenericSection title="Manage Settings" /> : <NotAuthorized />} />
+            <Route path="settings" element={<UserSettings />} />
             <Route path="portal_settings" element={requirePermission(PERMISSIONS.PORTAL_SETTINGS) ? <PortalSettings /> : <NotAuthorized />} />
             <Route path="subjects" element={
               hasPermission(permissions, PERMISSIONS.MANAGE_SUBJECTS) || hasPermission(permissions, PERMISSIONS.VIEW_SUBJECTS)
