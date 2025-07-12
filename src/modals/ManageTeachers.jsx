@@ -50,38 +50,64 @@ export default function ManageTeachersModal({ open, onClose, classId }) {
       const { gradeLevel, sectionName, schoolYear } = classData;
       setClassMeta({ gradeLevel, sectionName, schoolYear });
   
+      let subjectsData = [];
+      let usersData = [];
+  
+      const loadAssignments = (loadedSubjects) => {
+        unsubscribeAssignments = onSnapshot(
+          collection(db, 'subjectAssignments'),
+          (snapshot) => {
+            const allAssignments = snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+  
+            const filtered = allAssignments.filter(
+              (a) =>
+                a.gradeLevel === gradeLevel &&
+                a.sectionName === sectionName &&
+                a.schoolYear === schoolYear
+            );
+  
+            const finalSubjects = [];
+            const finalAssignments = [];
+  
+            for (const a of filtered) {
+              const subject = loadedSubjects.find((s) => s.id === a.subjectId);
+              if (subject) {
+                finalSubjects.push(subject);
+                finalAssignments.push({
+                  subjectId: subject.id,
+                  teacher: {
+                    id: a.teacherId,
+                    name: a.teacherName,
+                    employeeId: a.teacherEmployeeId,
+                  },
+                });
+              }
+            }
+  
+            setSubjects(finalSubjects);
+            setAssignments(finalAssignments);
+          }
+        );
+      };
+  
       unsubscribeSubjects = onSnapshot(collection(db, 'subjects'), (snapshot) => {
-        const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setAllSubjects(list);
+        subjectsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setAllSubjects(subjectsData);
+        loadAssignments(subjectsData); 
       });
   
       unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-        const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setUsers(list);
-      });
-  
-      unsubscribeAssignments = onSnapshot(collection(db, 'subjectAssignments'), (snapshot) => {
-        const allAssignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const filtered = allAssignments.filter(
-          a =>
-            a.gradeLevel === gradeLevel &&
-            a.sectionName === sectionName &&
-            a.schoolYear === schoolYear
-        );
-  
-        const subjectIds = filtered.map(a => a.subjectId);
-        const uniqueSubjects = allSubjects.filter(s => subjectIds.includes(s.id));
-        setSubjects(uniqueSubjects);
-  
-        const mapped = filtered.map(a => ({
-          subjectId: a.subjectId,
-          teacher: {
-            id: a.teacherId,
-            name: a.teacherName,
-            employeeId: a.teacherEmployeeId,
-          },
+        usersData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
         }));
-        setAssignments(mapped);
+        setUsers(usersData);
       });
     };
   
@@ -204,32 +230,34 @@ export default function ManageTeachersModal({ open, onClose, classId }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
       <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-      <h2 className="text-xl font-bold text-black mb-4">
-        Manage Teachers for {classMeta?.gradeLevel} - {classMeta?.sectionName} ({classMeta?.schoolYear})
-      </h2>
-
-        <div className="flex items-center gap-3 mb-4">
-          <select
-            className="select select-bordered w-full border border-gray-300 bg-white text-black"
-            value={selectedSubjectId}
-            onChange={e => setSelectedSubjectId(e.target.value)}
-          >
-            <option value="">Select Subject</option>
-            {allSubjects.map(subject => (
-              <option key={subject.id} value={subject.id}>
-                {subject.name}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={handleAddSubject}
-            className="btn bg-blue-500 hover:bg-blue-600 text-white"
-            disabled={!selectedSubjectId}
-          >
-            + Add Subject
-          </button>
+        <div className='sticky top-0 z-10 bg-white h-[100px]'>
+          <h2 className="text-xl font-bold text-black mb-4">
+            Manage Teachers for {classMeta?.gradeLevel} - {classMeta?.sectionName} ({classMeta?.schoolYear})
+          </h2>
+          <div className="flex items-center gap-3 mb-4">
+            <select
+              className="select select-bordered w-full border border-gray-300 bg-white text-black"
+              value={selectedSubjectId}
+              onChange={e => setSelectedSubjectId(e.target.value)}
+            >
+              <option value="">Select Subject</option>
+              {allSubjects
+                .filter(subject => !subjects.find(s => s.id === subject.id))
+                .map(subject => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.name}
+                  </option>
+              ))}
+            </select>
+            <button
+              onClick={handleAddSubject}
+              className="btn bg-blue-500 hover:bg-blue-600 text-white"
+              disabled={!selectedSubjectId}
+            >
+              + Add Subject
+            </button>
+          </div>
         </div>
-
         <div className="space-y-4">
           {subjects.map((subject) => {
             const teacher = assignments.find(a => a.subjectId === subject.id)?.teacher;
